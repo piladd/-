@@ -15,3 +15,4 @@ A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\refint\Messenger.
 A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenger.Infrastructure.pdb
 A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenger.Infrastructure.genruntimeconfig.cache
 A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\ref\Messenger.Infrastructure.dll
+A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenger.Infrastructure.sourcelink.json

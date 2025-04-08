@@ -113,3 +113,4 @@ A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\refint\Messenger.API.dll
 A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.pdb
 A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.genruntimeconfig.cache
 A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\ref\Messenger.API.dll
+A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.sourcelink.json

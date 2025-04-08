@@ -9,3 +9,4 @@ A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\Messenger.Security.dll
 A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\refint\Messenger.Security.dll
 A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\Messenger.Security.pdb
 A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\ref\Messenger.Security.dll
+A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\Messenger.Security.sourcelink.json

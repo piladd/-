@@ -1,31 +1,36 @@
 using Messenger.Application.Interfaces;
 using Messenger.Application.Services;
+using Messenger.Infrastructure.Repositories;
 using Messenger.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// Регистрация DbContext с использованием строки подключения
 builder.Services.AddDbContext<MessengerDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddScoped<IChatService, ChatService>();
+// Регистрация репозиториев и сервисов
+builder.Services.AddScoped<ChatRepository>();  // Регистрация ChatRepository
+builder.Services.AddScoped<IChatService, ChatService>();  // Регистрация IChatService и его реализации
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Настройки Swagger и API
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
-// Применение миграций при запуске
+// Применение миграций при старте приложения
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<MessengerDbContext>();
-    db.Database.Migrate();
+    db.Database.Migrate();  // Применение миграций
 }
 
 app.Run();

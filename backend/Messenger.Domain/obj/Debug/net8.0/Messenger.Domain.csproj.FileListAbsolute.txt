@@ -9,3 +9,4 @@ A:\Kursovaya\backend\Messenger.Domain\obj\Debug\net8.0\Messenger.Domain.dll
 A:\Kursovaya\backend\Messenger.Domain\obj\Debug\net8.0\refint\Messenger.Domain.dll
 A:\Kursovaya\backend\Messenger.Domain\obj\Debug\net8.0\Messenger.Domain.pdb
 A:\Kursovaya\backend\Messenger.Domain\obj\Debug\net8.0\ref\Messenger.Domain.dll
+A:\Kursovaya\backend\Messenger.Domain\obj\Debug\net8.0\Messenger.Domain.sourcelink.json

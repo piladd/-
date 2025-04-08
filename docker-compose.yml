@@ -1,7 +1,7 @@
 services:
   messenger-api:
     build:
-      context: ./backend        # 👈 Указываем папку, где лежит .sln
+      context: ./backend
       dockerfile: ./Dockerfile
     ports:
       - "5000:80"
@@ -10,6 +10,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Database=messengerdb;Username=postgres;Password=postgres
+    command: ["./wait-for-it.sh", "db:5432", "--", "dotnet", "Messenger.API.dll"]
 
   db:
     image: postgres:15
