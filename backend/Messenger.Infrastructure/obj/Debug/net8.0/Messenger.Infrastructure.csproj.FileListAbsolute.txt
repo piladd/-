@@ -9,10 +9,10 @@ A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenger.Infrast
 A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenger.Infrastructure.AssemblyInfoInputs.cache
 A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenger.Infrastructure.AssemblyInfo.cs
 A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenger.Infrastructure.csproj.CoreCompileInputs.cache
+A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenger.Infrastructure.sourcelink.json
 A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenge.BB154FBD.Up2Date
 A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenger.Infrastructure.dll
 A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\refint\Messenger.Infrastructure.dll
 A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenger.Infrastructure.pdb
 A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenger.Infrastructure.genruntimeconfig.cache
 A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\ref\Messenger.Infrastructure.dll
-A:\Kursovaya\backend\Messenger.Infrastructure\obj\Debug\net8.0\Messenger.Infrastructure.sourcelink.json

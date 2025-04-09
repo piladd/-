@@ -1,8 +1,3 @@
-A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.csproj.AssemblyReference.cache
-A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.GeneratedMSBuildEditorConfig.editorconfig
-A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.AssemblyInfoInputs.cache
-A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.AssemblyInfo.cs
-A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.csproj.CoreCompileInputs.cache
 A:\Kursovaya\backend\Messenger.Application\bin\Debug\net8.0\Messenger.Application.deps.json
 A:\Kursovaya\backend\Messenger.Application\bin\Debug\net8.0\Messenger.Application.dll
 A:\Kursovaya\backend\Messenger.Application\bin\Debug\net8.0\Messenger.Application.pdb
@@ -10,9 +5,14 @@ A:\Kursovaya\backend\Messenger.Application\bin\Debug\net8.0\Messenger.Domain.dll
 A:\Kursovaya\backend\Messenger.Application\bin\Debug\net8.0\Messenger.Infrastructure.dll
 A:\Kursovaya\backend\Messenger.Application\bin\Debug\net8.0\Messenger.Domain.pdb
 A:\Kursovaya\backend\Messenger.Application\bin\Debug\net8.0\Messenger.Infrastructure.pdb
+A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.csproj.AssemblyReference.cache
+A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.GeneratedMSBuildEditorConfig.editorconfig
+A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.AssemblyInfoInputs.cache
+A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.AssemblyInfo.cs
+A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.csproj.CoreCompileInputs.cache
+A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.sourcelink.json
 A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenge.95CFA983.Up2Date
 A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.dll
 A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\refint\Messenger.Application.dll
 A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.pdb
 A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\ref\Messenger.Application.dll
-A:\Kursovaya\backend\Messenger.Application\obj\Debug\net8.0\Messenger.Application.sourcelink.json

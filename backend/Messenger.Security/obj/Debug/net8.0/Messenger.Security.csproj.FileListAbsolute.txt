@@ -5,8 +5,8 @@ A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\Messenger.Security.Gene
 A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\Messenger.Security.AssemblyInfoInputs.cache
 A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\Messenger.Security.AssemblyInfo.cs
 A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\Messenger.Security.csproj.CoreCompileInputs.cache
+A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\Messenger.Security.sourcelink.json
 A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\Messenger.Security.dll
 A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\refint\Messenger.Security.dll
 A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\Messenger.Security.pdb
 A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\ref\Messenger.Security.dll
-A:\Kursovaya\backend\Messenger.Security\obj\Debug\net8.0\Messenger.Security.sourcelink.json

@@ -1,10 +1,3 @@
-A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.csproj.AssemblyReference.cache
-A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.GeneratedMSBuildEditorConfig.editorconfig
-A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.AssemblyInfoInputs.cache
-A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.AssemblyInfo.cs
-A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.csproj.CoreCompileInputs.cache
-A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.MvcApplicationPartsAssemblyInfo.cs
-A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.MvcApplicationPartsAssemblyInfo.cache
 A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\appsettings.json
 A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Messenger.API.staticwebassets.endpoints.json
 A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Messenger.API.exe
@@ -13,7 +6,6 @@ A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Messenger.API.runtimeconfig.
 A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Messenger.API.dll
 A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Messenger.API.pdb
 A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Humanizer.dll
-A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Microsoft.AspNetCore.OpenApi.dll
 A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Microsoft.Bcl.AsyncInterfaces.dll
 A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Microsoft.CodeAnalysis.dll
 A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Microsoft.CodeAnalysis.CSharp.dll
@@ -97,6 +89,14 @@ A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Messenger.Application.pdb
 A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Messenger.Infrastructure.pdb
 A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Messenger.Domain.pdb
 A:\Kursovaya\backend\Messenger.API\bin\Debug\net8.0\Messenger.Security.pdb
+A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.csproj.AssemblyReference.cache
+A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.GeneratedMSBuildEditorConfig.editorconfig
+A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.AssemblyInfoInputs.cache
+A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.AssemblyInfo.cs
+A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.csproj.CoreCompileInputs.cache
+A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.MvcApplicationPartsAssemblyInfo.cs
+A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.MvcApplicationPartsAssemblyInfo.cache
+A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.sourcelink.json
 A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\scopedcss\bundle\Messenger.API.styles.css
 A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\staticwebassets.build.json
 A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\staticwebassets.development.json
@@ -113,4 +113,3 @@ A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\refint\Messenger.API.dll
 A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.pdb
 A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.genruntimeconfig.cache
 A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\ref\Messenger.API.dll
-A:\Kursovaya\backend\Messenger.API\obj\Debug\net8.0\Messenger.API.sourcelink.json
