@@ -16,6 +16,7 @@ builder.Services.AddScoped<IChatService, ChatService>();  // Регистрац�
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IKeyStoreService, KeyStoreService>();
 
 var app = builder.Build();
 

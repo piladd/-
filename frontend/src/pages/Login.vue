@@ -16,17 +16,25 @@
 import { ref } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useRouter } from 'vue-router'
+import { KeyManagerService } from '@/services/key-manager.service'
 
 const username = ref('')
 const userStore = useUserStore()
 const router = useRouter()
 
-const login = () => {
+const login = async () => {
   const trimmed = username.value.trim()
-  if (trimmed) {
-    userStore.login(trimmed)
-    router.push('/chat')
-  }
+  if (!trimmed) return
+
+  // Сохраняем локально
+  localStorage.setItem('userId', trimmed)
+  userStore.login(trimmed)
+
+  // Генерация ключей (если нужно)
+  await KeyManagerService.ensurePrivateKey()
+
+  // Редирект
+  await router.push('/chat')
 }
 </script>
 

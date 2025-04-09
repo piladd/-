@@ -10,6 +10,7 @@ namespace Messenger.Infrastructure.Data
         public DbSet<User> Users => Set<User>();
         public DbSet<Chat> Chats => Set<Chat>();
         public DbSet<Message> Messages => Set<Message>();
+        public DbSet<PublicKey> PublicKeys => Set<PublicKey>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
