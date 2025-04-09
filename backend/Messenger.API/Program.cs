@@ -2,17 +2,47 @@ using Messenger.Application.Interfaces;
 using Messenger.Application.Services;
 using Messenger.Infrastructure.Repositories;
 using Messenger.Infrastructure.Data;
+using Messenger.Infrastructure.Repositories;
+using Messenger.Infrastructure.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Регистрация DbContext с использованием строки подключения
+// 📦 Регистрация контекста БД
 builder.Services.AddDbContext<MessengerDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Регистрация репозиториев и сервисов
-builder.Services.AddScoped<ChatRepository>();  // Регистрация ChatRepository
-builder.Services.AddScoped<IChatService, ChatService>();  // Регистрация IChatService и его реализации
+// 📦 Репозитории и сервисы
+builder.Services.AddScoped<ChatRepository>();
+builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IKeyStoreService, KeyStoreService>();
+builder.Services.AddScoped<IAuthService, AuthService>(); // ✅ добавили AuthService
+
+// 🔐 JWT конфигурация
+var jwtKey = builder.Configuration["JWT_KEY"];
+var jwtIssuer = builder.Configuration["JWT_ISSUER"];
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtConfig["Issuer"],
+        IssuerSigningKey = new SymmetricSecurityKey(jwtKey)
+    };
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -20,18 +50,19 @@ builder.Services.AddScoped<IKeyStoreService, KeyStoreService>();
 
 var app = builder.Build();
 
-// Настройки Swagger и API
+// 🔧 Middleware
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
+app.UseAuthentication(); // ✅ обязательно ДО UseAuthorization
 app.UseAuthorization();
 app.MapControllers();
 
-// Применение миграций при старте приложения
+// Применение миграций
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<MessengerDbContext>();
-    db.Database.Migrate();  // Применение миграций
+    db.Database.Migrate();
 }
 
 app.Run();
