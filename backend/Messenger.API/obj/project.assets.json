@@ -2762,11 +2762,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "A:\\Kursovaya\\backend\\Messenger.API\\Messenger.API.csproj",
+      "projectUniqueName": "D:\\-\\backend\\Messenger.API\\Messenger.API.csproj",
       "projectName": "Messenger.API",
-      "projectPath": "A:\\Kursovaya\\backend\\Messenger.API\\Messenger.API.csproj",
+      "projectPath": "D:\\-\\backend\\Messenger.API\\Messenger.API.csproj",
       "packagesPath": "C:\\Users\\savra\\.nuget\\packages\\",
-      "outputPath": "A:\\Kursovaya\\backend\\Messenger.API\\obj\\",
+      "outputPath": "D:\\-\\backend\\Messenger.API\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -2782,23 +2782,23 @@
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "C:\\Program Files\\dotnet\\library-packs": {},
-        "https://api.nuget.org/v3/index.json": {}
+        "https://www.nuget.org/api/v2": {}
       },
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "A:\\Kursovaya\\backend\\Messenger.Application\\Messenger.Application.csproj": {
-              "projectPath": "A:\\Kursovaya\\backend\\Messenger.Application\\Messenger.Application.csproj"
+            "D:\\-\\backend\\Messenger.Application\\Messenger.Application.csproj": {
+              "projectPath": "D:\\-\\backend\\Messenger.Application\\Messenger.Application.csproj"
             },
-            "A:\\Kursovaya\\backend\\Messenger.Domain\\Messenger.Domain.csproj": {
-              "projectPath": "A:\\Kursovaya\\backend\\Messenger.Domain\\Messenger.Domain.csproj"
+            "D:\\-\\backend\\Messenger.Domain\\Messenger.Domain.csproj": {
+              "projectPath": "D:\\-\\backend\\Messenger.Domain\\Messenger.Domain.csproj"
             },
-            "A:\\Kursovaya\\backend\\Messenger.Infrastructure\\Messenger.Infrastructure.csproj": {
-              "projectPath": "A:\\Kursovaya\\backend\\Messenger.Infrastructure\\Messenger.Infrastructure.csproj"
+            "D:\\-\\backend\\Messenger.Infrastructure\\Messenger.Infrastructure.csproj": {
+              "projectPath": "D:\\-\\backend\\Messenger.Infrastructure\\Messenger.Infrastructure.csproj"
             },
-            "A:\\Kursovaya\\backend\\Messenger.Security\\Messenger.Security.csproj": {
-              "projectPath": "A:\\Kursovaya\\backend\\Messenger.Security\\Messenger.Security.csproj"
+            "D:\\-\\backend\\Messenger.Security\\Messenger.Security.csproj": {
+              "projectPath": "D:\\-\\backend\\Messenger.Security\\Messenger.Security.csproj"
             }
           }
         }
@@ -2811,7 +2811,7 @@
       "restoreAuditProperties": {
         "enableAudit": "true",
         "auditLevel": "low",
-        "auditMode": "all"
+        "auditMode": "direct"
       },
       "SdkAnalysisLevel": "9.0.100"
     },
@@ -2847,50 +2847,8 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.100/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1903",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "У пакета \"Microsoft.Extensions.Caching.Memory\" 8.0.0 есть известная уязвимость https://github.com/advisories/GHSA-qj66-m88j-hmgj (уровень серьезности: высокий уровень)",
-      "libraryId": "Microsoft.Extensions.Caching.Memory",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    },
-    {
-      "code": "NU1903",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "У пакета \"Npgsql\" 8.0.0 есть известная уязвимость https://github.com/advisories/GHSA-x9vc-6hfv-hg8c (уровень серьезности: высокий уровень)",
-      "libraryId": "Npgsql",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    },
-    {
-      "code": "NU1903",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "У пакета \"System.Text.Json\" 8.0.0 есть известная уязвимость https://github.com/advisories/GHSA-8g4q-xg66-9fp4 (уровень серьезности: высокий уровень)",
-      "libraryId": "System.Text.Json",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    },
-    {
-      "code": "NU1903",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "У пакета \"System.Text.Json\" 8.0.0 есть известная уязвимость https://github.com/advisories/GHSA-hh2w-p6rv-4g7w (уровень серьезности: высокий уровень)",
-      "libraryId": "System.Text.Json",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    }
-  ]
+  }
 }
