@@ -37,3 +37,6 @@ backend/obj/
 # ---------------------------------------
 .idea/
 .vscode/
+# .NET build artifacts
+**/bin/
+**/obj/
