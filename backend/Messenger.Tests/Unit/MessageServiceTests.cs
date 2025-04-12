@@ -5,6 +5,7 @@ using Messenger.Domain.Entities;
 using Messenger.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+            using var context = new MessengerDbContext(options);
 
 namespace Messenger.Tests.Unit
 {
@@ -18,7 +19,6 @@ namespace Messenger.Tests.Unit
                 .UseInMemoryDatabase(databaseName: "TestDb")
                 .Options;
 
-            using var context = new MessengerDbContext(options);
             var service = new MessageService(context, new Messenger.Security.EncryptionService());
 
             var chatId = Guid.NewGuid();

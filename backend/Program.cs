@@ -1,72 +1,84 @@
-using Messenger.Application.Interfaces;
-using Messenger.Application.Services;
-using Messenger.Infrastructure.Repositories;
-using Messenger.Infrastructure.Data;
-using Messenger.Security;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
+using Messenger.Application.Interfaces;
+using Messenger.Application.Services;
+using Messenger.Infrastructure;
+using Messenger.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- DbContext ---
-builder.Services.AddDbContext<MessengerDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Add services to the container.
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
 
-// --- Repositories ---
-builder.Services.AddScoped<UserRepository>();
-builder.Services.AddScoped<ChatRepository>();
-builder.Services.AddScoped<AttachmentRepository>();
-
-
-// --- JWT Auth ---
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Messenger API", Version = "v1" });
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
+        Description = "JWT Authorization header using the Bearer scheme.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer"
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            new string[] {}
+        }
+    });
+});
+
+// JWT authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = "messenger",
-            ValidAudience = "messenger",
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Crypto:MasterKey"]))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("super-secret-key")),
+            ValidateIssuer = false,
+            ValidateAudience = false
         };
     });
 
+builder.Services.AddAuthorization();
 
-// --- Services ---
+// Infrastructure and security
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<EncryptionService>();
+
+// Application services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IChatService, ChatService>();
-builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
-
-// --- Crypto ---
-builder.Services.AddTransient<EncryptionService>();
-
-// --- Controllers & Swagger ---
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IKeyStoreService, KeyStoreService>();
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+var builder = WebApplication.CreateBuilder(args);
 
-app.UseHttpsRedirection();
+builder.Services.AddControllers();
+
+var app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
 
-// --- Migrations ---
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<MessengerDbContext>();
-    db.Database.Migrate();
-}
+app.MapControllers();
 
 app.Run();

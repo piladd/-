@@ -1,4 +1,4 @@
-namespace Messenger.API.DTOs.Auth
+namespace Messenger.Domain.Models
 {
     public class UserDto
     {
@@ -6,6 +6,4 @@ namespace Messenger.API.DTOs.Auth
         public string Username { get; set; } = string.Empty;
         public string PublicKey { get; set; } = string.Empty;
     }
-
-    public string Token { get; set; }
 }

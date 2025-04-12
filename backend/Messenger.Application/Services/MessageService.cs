@@ -1,50 +1,29 @@
+using System;
+using System.Threading.Tasks;
 using Messenger.Application.Interfaces;
 using Messenger.Domain.Entities;
-using Messenger.Domain.Enums;
-using Messenger.Infrastructure.Data;
-using Messenger.Security;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Messenger.Domain.Models;
 
-namespace Messenger.Application.Services
+namespace Messenger.Application.Services;
+
+public class MessageService : IMessageService
 {
-    public class MessageService : IMessageService
+    private readonly List<Message> _messages = new();
+
+    public Task<Message> SendMessageAsync(SendMessageRequest request)
     {
-        private readonly MessengerDbContext _db;
-        private readonly EncryptionService _encryptionService;
-
-        public MessageService(MessengerDbContext db, EncryptionService encryptionService)
+        var message = new Message
         {
-            _db = db;
-            _encryptionService = encryptionService;
-        }
+            Id = Guid.NewGuid(),
+            ChatId = Guid.NewGuid(), // в реальном проекте нужно определять правильный chatId
+            SenderId = Guid.Parse(request.SenderId),
+            ReceiverId = Guid.Parse(request.ReceiverId),
+            Content = request.Content,
+            Timestamp = DateTime.UtcNow
+        };
 
-        public async Task<Message> SendMessageAsync(Guid chatId, Guid senderId, string content, string type = "Text")
-        {
-            var message = new Message
-            {
-                Id = Guid.NewGuid(),
-                ChatId = chatId,
-                SenderId = senderId,
-                Content = content,
-                Type = Enum.TryParse<MessageType>(type, out var messageType) ? messageType : MessageType.Text,
-                SentAt = DateTime.UtcNow
-            };
+        _messages.Add(message);
 
-            _db.Messages.Add(message);
-            await _db.SaveChangesAsync();
-            return message;
-        }
-
-        public async Task<List<Message>> GetMessagesAsync(Guid chatId)
-        {
-            return await _db.Messages
-                .Where(m => m.ChatId == chatId)
-                .OrderBy(m => m.SentAt)
-                .ToListAsync();
-        }
+        return Task.FromResult(message);
     }
 }

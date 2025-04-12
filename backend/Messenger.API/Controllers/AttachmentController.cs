@@ -2,6 +2,9 @@ using Messenger.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+
+                using var ms = new MemoryStream();
 
 namespace Messenger.API.Controllers
 {

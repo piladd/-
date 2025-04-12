@@ -1,6 +1,7 @@
+using Messenger.Domain.Entities;
 using Messenger.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Messenger.API.DTOs.Auth;
+using Messenger.Domain.Models;
 using System.Threading.Tasks;
 
 namespace Messenger.API.Controllers

@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Messenger.Infrastructure;
 using Messenger.Application.Interfaces;
 using Messenger.Domain.Entities;
 using Messenger.Infrastructure.Repositories;
@@ -5,6 +7,9 @@ using Messenger.Security;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+
+
 
 namespace Messenger.Application.Services
 {
