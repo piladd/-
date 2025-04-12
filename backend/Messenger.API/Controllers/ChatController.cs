@@ -1,9 +1,12 @@
 using Messenger.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 
 namespace Messenger.API.Controllers
 {
-    [ApiController]
+    [Authorize]
+[ApiController]
     [Route("api/[controller]")]
     public class ChatController : ControllerBase
     {
@@ -20,27 +23,86 @@ namespace Messenger.API.Controllers
             if (string.IsNullOrWhiteSpace(request.Title))
                 return BadRequest("Название чата обязательно.");
 
-            var chat = await _chatService.CreateChatAsync(request.Title);
-            return Ok(chat);
+            try
+            {
+                var chat = await _chatService.CreateChatAsync(request.Title);
+                return Ok(chat);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Ошибка при создании чата.");
+            }
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var chats = await _chatService.GetAllChatsAsync();
-            return Ok(chats);
+            try
+            {
+                var chats = await _chatService.GetAllChatsAsync();
+                return Ok(chats);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Ошибка при получении списка чатов.");
+            }
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var chat = await _chatService.GetChatByIdAsync(id);
-            return chat is not null ? Ok(chat) : NotFound("Чат не найден.");
+            try
+            {
+                var chat = await _chatService.GetChatByIdAsync(id);
+                return chat is not null ? Ok(chat) : NotFound("Чат не найден.");
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Ошибка при поиске чата.");
+            }
+        }
+
+        [HttpPost("{chatId}/message")]
+        public async Task<IActionResult> SendMessage(Guid chatId, [FromBody] SendMessageRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.MessageText))
+                return BadRequest("Текст сообщения обязателен.");
+
+            try
+            {
+                await _chatService.SendMessageAsync(chatId, request.SenderId, request.ReceiverId, request.MessageText);
+                return Ok("Сообщение отправлено.");
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Ошибка при отправке сообщения.");
+            }
+        }
+
+        [HttpGet("{chatId}/messages")]
+        public async Task<IActionResult> GetMessages(Guid chatId)
+        {
+            try
+            {
+                var messages = await _chatService.GetMessagesAsync(chatId);
+                return Ok(messages);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "Ошибка при получении сообщений.");
+            }
         }
     }
 
     public class ChatRequest
     {
         public string Title { get; set; } = string.Empty;
+    }
+
+    public class SendMessageRequest
+    {
+        public Guid SenderId { get; set; }
+        public Guid ReceiverId { get; set; }
+        public string MessageText { get; set; } = string.Empty;
     }
 }

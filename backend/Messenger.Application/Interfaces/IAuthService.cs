@@ -1,10 +1,11 @@
-using Messenger.Domain.Entities;
+using System.Threading.Tasks;
+using Messenger.API.DTOs.Auth;
 
 namespace Messenger.Application.Interfaces
 {
     public interface IAuthService
     {
-        Task<User?> AuthenticateAsync(string username, string password);
-        Task<User> RegisterAsync(string username, string password);
+        Task<UserDto> AuthenticateAsync(string username, string password);
+        Task<UserDto> RegisterAsync(string username, string password);
     }
 }

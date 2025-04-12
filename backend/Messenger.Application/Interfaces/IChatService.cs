@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Messenger.Domain.Entities;
 
 namespace Messenger.Application.Interfaces
@@ -7,5 +10,7 @@ namespace Messenger.Application.Interfaces
         Task<Chat> CreateChatAsync(string title);
         Task<IEnumerable<Chat>> GetAllChatsAsync();
         Task<Chat?> GetChatByIdAsync(Guid id);
+        Task SendMessageAsync(Guid chatId, Guid senderId, Guid receiverId, string messageText);
+        Task<IEnumerable<Message>> GetMessagesAsync(Guid chatId);
     }
 }

@@ -7,23 +7,21 @@ namespace Messenger.Infrastructure.Data
     {
         public MessengerDbContext(DbContextOptions<MessengerDbContext> options) : base(options) { }
 
-        public DbSet<User> Users => Set<User>();
-        public DbSet<Chat> Chats => Set<Chat>();
-        public DbSet<Message> Messages => Set<Message>();
-        public DbSet<PublicKey> PublicKeys => Set<PublicKey>();
+        public DbSet<User> Users { get; set; }
+        public DbSet<Chat> Chats { get; set; }
+        public DbSet<Message> Messages { get; set; }
+        public DbSet<Attachment> Attachments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // User → Messages (отправленные)
             modelBuilder.Entity<User>()
                 .HasMany(u => u.SentMessages)
                 .WithOne(m => m.Sender)
                 .HasForeignKey(m => m.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Chat → Messages
             modelBuilder.Entity<Chat>()
                 .HasMany(c => c.Messages)
                 .WithOne(m => m.Chat)

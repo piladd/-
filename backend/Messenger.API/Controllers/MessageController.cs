@@ -4,7 +4,8 @@ using Messenger.Domain.Entities;
 
 namespace Messenger.API.Controllers
 {
-    [ApiController]
+    [Authorize]
+[ApiController]
     [Route("api/[controller]")]
     public class MessageController : ControllerBase
     {
