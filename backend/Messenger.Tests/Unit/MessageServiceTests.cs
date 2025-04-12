@@ -5,7 +5,8 @@ using Messenger.Domain.Entities;
 using Messenger.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
-            using var context = new MessengerDbContext(options);
+
+using var context = new MessengerDbContext(options);
 
 namespace Messenger.Tests.Unit
 {

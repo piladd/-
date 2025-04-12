@@ -2,24 +2,23 @@ using System.Text;
 using Messenger.Security;
 using Xunit;
 
-namespace Messenger.Tests.Unit
+namespace Messenger.Tests.Unit;
+
+public class EncryptionServiceTests
 {
-    public class EncryptionServiceTests
+    [Fact]
+    public void EncryptAndDecrypt_ShouldReturnOriginalText()
     {
-        [Fact]
-        public void EncryptAndDecrypt_ShouldReturnOriginalText()
-        {
-            // Arrange
-            var service = new EncryptionService();
-            var (publicKey, privateKey) = service.GenerateAsymmetricKeys();
-            var originalText = "Secret Message";
+        // Arrange
+        var service = new EncryptionService();
+        var (publicKey, privateKey) = service.GenerateAsymmetricKeys();
+        var originalText = "Secret Message";
 
-            // Act
-            var encrypted = service.EncryptWithPublicKey(originalText, publicKey);
-            var decrypted = service.DecryptWithPrivateKey(encrypted, privateKey);
+        // Act
+        var encrypted = service.EncryptWithPublicKey(originalText, publicKey);
+        var decrypted = service.DecryptWithPrivateKey(encrypted, privateKey);
 
-            // Assert
-            Assert.Equal(originalText, decrypted);
-        }
+        // Assert
+        Assert.Equal(originalText, decrypted);
     }
 }

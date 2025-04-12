@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
-                using var ms = new MemoryStream();
+using var ms = new MemoryStream();
 
 namespace Messenger.API.Controllers
 {

@@ -1,9 +1,8 @@
-namespace Messenger.Domain.Enums
+namespace Messenger.Domain.Enums;
+
+public enum MessageType
 {
-    public enum MessageType
-    {
-        Text,
-        Image,
-        Video
-    }
+    Text,
+    Image,
+    Video
 }

@@ -1,5 +1,3 @@
-using System;
-
 namespace Messenger.Domain.Models;
 
 public class SendMessageRequest
