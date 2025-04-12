@@ -7,61 +7,55 @@ using Messenger.Security;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using Xunit;
+using Messenger.Tests.TestData;
 
-namespace Messenger.Tests;
+namespace Messenger.Tests.Unit;
 
 public class AuthServiceTests
 {
     [Fact]
-    public async Task AuthenticateAsync_ShouldReturnUserDto_WhenCredentialsAreCorrect()
+    public async Task AuthenticateAsync_ShouldReturnUser_WhenCredentialsAreCorrect()
     {
         // Arrange
         var mockUserRepo = new Mock<UserRepository>(null);
         var encryptionService = new EncryptionService();
         var mockConfig = new Mock<IConfiguration>();
-        mockConfig.Setup(c => c["Crypto:MasterKey"]).Returns("TestSecretKey1234567890123456");
+        mockConfig.Setup(c => c["Security:MasterKey"]).Returns("TestSecretKey1234567890123456");
 
-        var user = new User
-        {
-            Id = Guid.NewGuid(),
-            Username = "testuser",
-            PasswordHash = encryptionService.EncryptWithPublicKey("password", encryptionService.GenerateAsymmetricKeys().publicKey) // just placeholder
-        };
+        var user = UserTestData.GetSampleUser();
 
-        mockUserRepo.Setup(repo => repo.GetUserByUsernameAsync("testuser"))
+        mockUserRepo.Setup(repo => repo.GetUserByUsernameAsync(user.Username))
             .ReturnsAsync(user);
 
         var authService = new AuthService(mockUserRepo.Object, encryptionService, mockConfig.Object);
 
         // Act
-        var result = await authService.AuthenticateAsync("testuser", "password");
+        var result = await authService.AuthenticateAsync(user.Username, user.Password);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("testuser", result.Username);
-        Assert.False(string.IsNullOrWhiteSpace(result.Token));
+        Assert.Equal(user.Username, result.Username);
+        Assert.Equal(user.PublicKey, result.PublicKey);
     }
-}
 
-[Fact]
-public async Task ShouldReturnNull_WhenUserDoesNotExist()
-{
-    // Arrange
-    var mockUserRepo = new Mock<UserRepository>(null);
-    var encryptionService = new EncryptionService();
-    var mockConfig = new Mock<IConfiguration>();
-    mockConfig.Setup(c => c["Crypto:MasterKey"]).Returns("TestSecretKey1234567890123456");
+    [Fact]
+    public async Task AuthenticateAsync_ShouldReturnNull_WhenUserNotFound()
+    {
+        // Arrange
+        var mockUserRepo = new Mock<UserRepository>(null);
+        var encryptionService = new EncryptionService();
+        var mockConfig = new Mock<IConfiguration>();
+        mockConfig.Setup(c => c["Security:MasterKey"]).Returns("TestSecretKey1234567890123456");
 
-    mockUserRepo.Setup(repo => repo.GetUserByUsernameAsync("wronguser"))
-        .ReturnsAsync((User)null);
+        mockUserRepo.Setup(repo => repo.GetUserByUsernameAsync("unknown"))
+            .ReturnsAsync((User)null);
 
-    var authService = new AuthService(mockUserRepo.Object, encryptionService, mockConfig.Object);
+        var authService = new AuthService(mockUserRepo.Object, encryptionService, mockConfig.Object);
 
-    // Act
-    var result = await authService.AuthenticateAsync("wronguser", "password");
+        // Act
+        var result = await authService.AuthenticateAsync("unknown", "password");
 
-    // Assert
-    Assert.Null(result);
-}
-
+        // Assert
+        Assert.Null(result);
+    }
 }

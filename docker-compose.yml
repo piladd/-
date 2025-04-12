@@ -4,22 +4,22 @@ services:
       context: ./backend
       dockerfile: ./Dockerfile
     ports:
-      - "5000:8080"
+      - "${BACKEND_PORT}:${BACKEND_CONTAINER_PORT}"
     depends_on:
       - db
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=db;Database=messengerdb;Username=postgres;Password=postgres
-    command: ["./wait-for-it.sh", "db:5432", "--", "dotnet", "Messenger.API.dll"]
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ConnectionStrings__DefaultConnection=Host=${POSTGRES_HOST};Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+    command: ["./wait-for-it.sh", "${POSTGRES_HOST}:5432", "--", "dotnet", "Messenger.API.dll"]
 
   db:
     image: postgres:15
     container_name: messenger-db
     restart: always
     environment:
-      POSTGRES_DB: messengerdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -30,7 +30,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "5173:80"
+      - "${FRONTEND_PORT}:${FRONTEND_CONTAINER_PORT}"
     depends_on:
       - messenger-api
 

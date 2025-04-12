@@ -1,38 +1,73 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Messenger.Application.Services;
-using Messenger.Domain.Entities;
-using Messenger.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
+using Messenger.Domain.Models;
+using Messenger.Tests.TestData;
 using Xunit;
 
-using var context = new MessengerDbContext(options);
+namespace Messenger.Tests.Unit;
 
-namespace Messenger.Tests.Unit
+public class MessageServiceTests
 {
-    public class MessageServiceTests
+    [Fact]
+    public async Task SendMessageAsync_ShouldReturnValidMessage()
     {
-        [Fact]
-        public async Task SendMessageAsync_ShouldStoreMessage()
+        // Arrange
+        var service = new MessageService();
+
+        var sender = UserTestData.GetSampleUser();
+        var receiver = UserTestData.GetSampleUser();
+        var request = new SendMessageRequest
         {
-            // Arrange
-            var options = new DbContextOptionsBuilder<MessengerDbContext>()
-                .UseInMemoryDatabase(databaseName: "TestDb")
-                .Options;
+            SenderId = sender.Id.ToString(),
+            ReceiverId = receiver.Id.ToString(),
+            Content = "Тестовое сообщение"
+        };
 
-            var service = new MessageService(context, new Messenger.Security.EncryptionService());
+        // Act
+        var result = await service.SendMessageAsync(request);
 
-            var chatId = Guid.NewGuid();
-            var senderId = Guid.NewGuid();
-            var content = "Hello!";
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(request.Content, result.Content);
+        Assert.Equal(Guid.Parse(request.SenderId), result.SenderId);
+        Assert.Equal(Guid.Parse(request.ReceiverId), result.ReceiverId);
+        Assert.NotEqual(Guid.Empty, result.Id);
+        Assert.True((DateTime.UtcNow - result.Timestamp).TotalSeconds < 5);
+    }
 
-            // Act
-            var result = await service.SendMessageAsync(chatId, senderId, content);
+    [Fact]
+    public async Task GetMessagesAsync_ShouldReturnAllMessages()
+    {
+        // Arrange
+        var service = new MessageService();
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(chatId, result.ChatId);
-            Assert.Equal(content, result.Content);
-        }
+        var sender = UserTestData.GetSampleUser();
+        var receiver = UserTestData.GetSampleUser();
+
+        await service.SendMessageAsync(new SendMessageRequest
+        {
+            SenderId = sender.Id.ToString(),
+            ReceiverId = receiver.Id.ToString(),
+            Content = "Первое сообщение"
+        });
+
+        await service.SendMessageAsync(new SendMessageRequest
+        {
+            SenderId = sender.Id.ToString(),
+            ReceiverId = receiver.Id.ToString(),
+            Content = "Второе сообщение"
+        });
+
+        // Act
+        var messages = service.GetMessages();
+
+        // Assert
+        Assert.NotNull(messages);
+        Assert.Equal(2, messages.Count());
+        Assert.Contains(messages, m => m.Content == "Первое сообщение");
+        Assert.Contains(messages, m => m.Content == "Второе сообщение");
     }
 }
