@@ -2,25 +2,30 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
+# Копируем решение и проекты
 COPY Messenger.sln ./
 COPY Messenger.API/*.csproj Messenger.API/
 COPY Messenger.Application/*.csproj Messenger.Application/
 COPY Messenger.Domain/*.csproj Messenger.Domain/
 COPY Messenger.Infrastructure/*.csproj Messenger.Infrastructure/
 COPY Messenger.Security/*.csproj Messenger.Security/
+COPY Messenger.Tests/*.csproj Messenger.Tests/
+
+# Восстановление зависимостей
 RUN dotnet restore
 
-COPY . ./
+# Копируем весь исходный код
+COPY . .
+
+# (Опционально) Запускаем тесты
+#RUN dotnet test Messenger.Tests/Messenger.Tests.csproj --no-build --verbosity normal
+
+# Публикуем приложение
 RUN dotnet publish Messenger.API/Messenger.API.csproj -c Release -o /app/out
 
-# Этап рантайма
+# Финальный образ
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
-
 COPY --from=build /app/out .
-
-# Копируем wait-for-it.sh из исходной директории сборки
-COPY wait-for-it.sh ./wait-for-it.sh
-RUN chmod +x wait-for-it.sh
 
 ENTRYPOINT ["dotnet", "Messenger.API.dll"]
