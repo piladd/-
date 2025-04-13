@@ -1,16 +1,20 @@
 using Messenger.Domain.Entities;
 using Messenger.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Messenger.Infrastructure.Repositories
 {
     public class ChatRepository
     {
-        private readonly MessengerDbContext _db;
+        private readonly MessengerDbContext _dbContext;
 
-        public ChatRepository(MessengerDbContext db)
+        public ChatRepository(MessengerDbContext dbContext)
         {
-            _db = db;
+            _dbContext = dbContext;
         }
 
         public async Task<Chat> CreateAsync(string title)
@@ -18,26 +22,30 @@ namespace Messenger.Infrastructure.Repositories
             var chat = new Chat
             {
                 Id = Guid.NewGuid(),
-                Title = title
+                Title = title,
+                CreatedAt = DateTime.UtcNow
             };
-
-            _db.Chats.Add(chat);
-            await _db.SaveChangesAsync();
+            _dbContext.Chats.Add(chat);
+            await _dbContext.SaveChangesAsync();
             return chat;
         }
 
         public async Task<IEnumerable<Chat>> GetAllAsync()
         {
-            return await _db.Chats
-                .Include(c => c.Messages)
-                .ToListAsync();
+            return await _dbContext.Chats.ToListAsync();
         }
 
         public async Task<Chat?> GetByIdAsync(Guid id)
         {
-            return await _db.Chats
-                .Include(c => c.Messages)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            return await _dbContext.Chats.FindAsync(id);
+        }
+
+        public async Task<IEnumerable<Message>> GetMessagesByChatIdAsync(Guid chatId)
+        {
+            return await _dbContext.Messages
+                .Where(m => m.ChatId == chatId)
+                .OrderBy(m => m.SentAt)
+                .ToListAsync();
         }
     }
 }

@@ -1,31 +1,59 @@
+using Microsoft.EntityFrameworkCore;
 using Messenger.Application.Interfaces;
 using Messenger.Domain.Entities;
-using Messenger.Infrastructure.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace Messenger.Application.Services
+namespace Messenger.Application.Services;
+
+public class ChatService : IChatService
 {
-    public class ChatService : IChatService
+    private static readonly List<Chat> MockChats = new()
     {
-        private readonly ChatRepository _chatRepository;
+        new Chat { Id = Guid.NewGuid(), Title = "Общий чат", Messages = new List<Message>() },
+        new Chat { Id = Guid.NewGuid(), Title = "Рабочая группа", Messages = new List<Message>() }
+    };
 
-        public ChatService(ChatRepository chatRepository)
-        {
-            _chatRepository = chatRepository;
-        }
+    public Task<IEnumerable<Chat>> GetAllChatsAsync()
+    {
+        return Task.FromResult(MockChats.AsEnumerable());
+    }
 
-        public async Task<Chat> CreateChatAsync(string title)
-        {
-            return await _chatRepository.CreateAsync(title);
-        }
+    public Task<Chat?> GetChatByIdAsync(Guid chatId)
+    {
+        var chat = MockChats.FirstOrDefault(c => c.Id == chatId);
+        return Task.FromResult(chat);
+    }
 
-        public async Task<IEnumerable<Chat>> GetAllChatsAsync()
-        {
-            return await _chatRepository.GetAllAsync();
-        }
+    public Task<Chat> CreateChatAsync(string name)
+    {
+        var chat = new Chat { Id = Guid.NewGuid(), Title = name, Messages = new List<Message>() };
+        MockChats.Add(chat);
+        return Task.FromResult(chat);
+    }
 
-        public async Task<Chat?> GetChatByIdAsync(Guid id)
+    public Task SendMessageAsync(Guid chatId, Guid senderId, Guid messageId, string content)
+    {
+        var chat = MockChats.FirstOrDefault(c => c.Id == chatId);
+        if (chat != null)
         {
-            return await _chatRepository.GetByIdAsync(id);
+            chat.Messages.Add(new Message
+            {
+                Id = messageId,
+                ChatId = chatId,
+                SenderId = senderId,
+                Content = content,
+                Timestamp = DateTime.UtcNow
+            });
         }
+        return Task.CompletedTask;
+    }
+
+    public Task<IEnumerable<Message>> GetMessagesAsync(Guid chatId)
+    {
+        var chat = MockChats.FirstOrDefault(c => c.Id == chatId);
+        return Task.FromResult(chat?.Messages.AsEnumerable() ?? Enumerable.Empty<Message>());
     }
 }

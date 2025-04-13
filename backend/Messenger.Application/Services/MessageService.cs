@@ -1,45 +1,37 @@
-using Messenger.Application.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Messenger.Domain.Entities;
-using Messenger.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
-using Messenger.Domain.Enums;
+using Messenger.Domain.Models;
+using Messenger.Security;
 
-namespace Messenger.Application.Services
+namespace Messenger.Application.Services;
+
+public class MessageService
 {
-    public class MessageService : IMessageService
+    private readonly List<Message> _messages = new(); // In-memory хранилище
+    private readonly EncryptionService _encryptionService = new(); // можно внедрить, если нужно
+
+    public Task<Message> SendMessageAsync(SendMessageRequest request)
     {
-        private readonly MessengerDbContext _db;
-
-        public MessageService(MessengerDbContext db)
+        var message = new Message
         {
-            _db = db;
-        }
+            Id = Guid.NewGuid(),
+            ChatId = Guid.NewGuid(), // если у тебя нет чата — заглушка
+            SenderId = Guid.Parse(request.SenderId),
+            ReceiverId = Guid.Parse(request.ReceiverId),
+            Content = request.Content,
+            Timestamp = DateTime.UtcNow
+        };
 
-        // Реализация метода отправки сообщения
-        public async Task<Message> SendMessageAsync(Guid chatId, Guid senderId, string content, string type = "Text")
-        {
-            var message = new Message
-            {
-                Id = Guid.NewGuid(),
-                ChatId = chatId,
-                SenderId = senderId,
-                Content = content,
-                Type = Enum.TryParse<MessageType>(type, out var messageType) ? messageType : MessageType.Text,
-                SentAt = DateTime.UtcNow
-            };
+        _messages.Add(message);
 
-            _db.Messages.Add(message);
-            await _db.SaveChangesAsync();
-            return message;
-        }
+        return Task.FromResult(message);
+    }
 
-        // Получение сообщений по ID чата
-        public async Task<IEnumerable<Message>> GetMessagesByChatIdAsync(Guid chatId)
-        {
-            return await _db.Messages
-                .Where(m => m.ChatId == chatId)
-                .OrderBy(m => m.SentAt)
-                .ToListAsync();
-        }
+    public IEnumerable<Message> GetMessages()
+    {
+        return _messages;
     }
 }
