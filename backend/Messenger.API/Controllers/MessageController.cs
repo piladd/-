@@ -1,21 +1,31 @@
 using Messenger.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
 
 namespace Messenger.API.Controllers;
 
+/// <summary>
+/// Контроллер для отправки сообщений через IMessageService.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class MessageController : ControllerBase
 {
     private readonly IMessageService _messageService;
 
+    /// <summary>
+    /// Конструктор контроллера сообщений.
+    /// </summary>
+    /// <param name="messageService">Сервис отправки сообщений</param>
     public MessageController(IMessageService messageService)
     {
         _messageService = messageService;
     }
 
+    /// <summary>
+    /// Отправляет сообщение от одного пользователя к другому.
+    /// </summary>
+    /// <param name="request">Запрос, содержащий отправителя, получателя, текст и ключи</param>
+    /// <returns>Информация об отправленном сообщении или ошибка</returns>
     [HttpPost]
     public async Task<IActionResult> SendMessage([FromBody] Domain.Models.SendMessageRequest request)
     {

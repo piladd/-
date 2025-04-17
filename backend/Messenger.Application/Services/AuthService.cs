@@ -8,12 +8,18 @@ using Microsoft.Extensions.Configuration;
 
 namespace Messenger.Application.Services;
 
+/// <summary>
+/// Сервис авторизации и регистрации пользователей с генерацией ключей и шифрованием.
+/// </summary>
 public class AuthService : IAuthService
 {
     private readonly UserRepository _userRepository;
     private readonly EncryptionService _encryptionService;
     private readonly string _masterKey;
 
+    /// <summary>
+    /// Конструктор сервиса, получает зависимости и мастер-ключ из конфигурации.
+    /// </summary>
     public AuthService(UserRepository userRepository, EncryptionService encryptionService, IConfiguration configuration)
     {
         _userRepository = userRepository;
@@ -21,6 +27,12 @@ public class AuthService : IAuthService
         _masterKey = configuration["Security:MasterKey"] ?? throw new ArgumentNullException("MasterKey not found in configuration.");
     }
 
+    /// <summary>
+    /// Проверяет логин и пароль пользователя и возвращает объект пользователя при успешной аутентификации.
+    /// </summary>
+    /// <param name="username">Имя пользователя</param>
+    /// <param name="password">Пароль</param>
+    /// <returns>Пользователь или null, если данные неверны</returns>
     public async Task<User> AuthenticateAsync(string username, string password)
     {
         try
@@ -37,6 +49,12 @@ public class AuthService : IAuthService
         }
     }
 
+    /// <summary>
+    /// Регистрирует нового пользователя, генерирует асимметричные ключи и шифрует приватный ключ.
+    /// </summary>
+    /// <param name="username">Имя пользователя</param>
+    /// <param name="password">Пароль</param>
+    /// <returns>Созданный пользователь</returns>
     public async Task<User> RegisterAsync(string username, string password)
     {
         try
@@ -45,7 +63,10 @@ public class AuthService : IAuthService
             if (existing != null)
                 throw new Exception("Пользователь с таким именем уже существует.");
 
+            // Генерация пары ключей
             var (publicKeyBytes, privateKeyBytes) = _encryptionService.GenerateAsymmetricKeys();
+
+            // Сохранение публичного и зашифрованного приватного ключа
             string publicKey = Convert.ToBase64String(publicKeyBytes);
             string encryptedPrivateKey = _encryptionService.EncryptPrivateKey(privateKeyBytes, _masterKey);
 

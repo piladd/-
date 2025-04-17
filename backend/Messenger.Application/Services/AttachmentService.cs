@@ -9,21 +9,33 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 
-
-
 namespace Messenger.Application.Services;
 
+/// <summary>
+/// Сервис для загрузки и скачивания зашифрованных вложений.
+/// </summary>
 public class AttachmentService : IAttachmentService
 {
     private readonly AttachmentRepository _attachmentRepository;
     private readonly EncryptionService _encryptionService;
 
+    /// <summary>
+    /// Конструктор сервиса вложений.
+    /// </summary>
+    /// <param name="attachmentRepository">Репозиторий вложений</param>
+    /// <param name="encryptionService">Сервис шифрования</param>
     public AttachmentService(AttachmentRepository attachmentRepository, EncryptionService encryptionService)
     {
         _attachmentRepository = attachmentRepository;
         _encryptionService = encryptionService;
     }
 
+    /// <summary>
+    /// Загружает файл, шифрует его и сохраняет в базу данных.
+    /// </summary>
+    /// <param name="fileName">Имя файла</param>
+    /// <param name="fileData">Массив байт содержимого файла</param>
+    /// <returns>ID созданного вложения</returns>
     public async Task<int> UploadAttachmentAsync(string fileName, byte[] fileData)
     {
         if (string.IsNullOrWhiteSpace(fileName))
@@ -31,11 +43,16 @@ public class AttachmentService : IAttachmentService
 
         try
         {
+            // Генерируем симметричный ключ для шифрования
             var symKey = _encryptionService.GenerateSymmetricKey();
-            // Преобразуем байты файла в строку Base64 для шифрования (демонстрационно)
+
+            // Преобразуем байты файла в строку Base64 (для примера)
             var fileDataBase64 = Convert.ToBase64String(fileData);
+
+            // Шифруем данные с помощью AES
             var (iv, cipherBytes) = _encryptionService.EncryptWithAes(fileDataBase64, symKey);
 
+            // Сохраняем вложение в базу
             var attachment = new Attachment
             {
                 FileName = fileName,
@@ -54,6 +71,11 @@ public class AttachmentService : IAttachmentService
         }
     }
 
+    /// <summary>
+    /// Получает и расшифровывает вложение по его ID.
+    /// </summary>
+    /// <param name="attachmentId">ID вложения</param>
+    /// <returns>Расшифрованный файл в виде массива байт или null, если не найден</returns>
     public async Task<byte[]?> DownloadAttachmentAsync(int attachmentId)
     {
         try
@@ -63,7 +85,11 @@ public class AttachmentService : IAttachmentService
                 return null;
 
             var symKey = Convert.FromBase64String(attachment.SymmetricKey);
-            var decryptedString = _encryptionService.DecryptWithAes(attachment.EncryptedData, symKey, Convert.FromBase64String(attachment.IV));
+            var decryptedString = _encryptionService.DecryptWithAes(
+                attachment.EncryptedData,
+                symKey,
+                Convert.FromBase64String(attachment.IV));
+
             return Convert.FromBase64String(decryptedString);
         }
         catch (Exception ex)

@@ -4,17 +4,31 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Security.Claims;
+
 namespace Messenger.Application.Services;
 
+/// <summary>
+/// Сервис для генерации JWT-токенов аутентификации.
+/// </summary>
 public class TokenService
 {
     private readonly IConfiguration _configuration;
 
+    /// <summary>
+    /// Конструктор сервиса токенов, получает доступ к конфигурации.
+    /// </summary>
+    /// <param name="configuration">Конфигурация приложения</param>
     public TokenService(IConfiguration configuration)
     {
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Генерирует JWT-токен с данными пользователя.
+    /// </summary>
+    /// <param name="userId">ID пользователя</param>
+    /// <param name="username">Имя пользователя</param>
+    /// <returns>Строка JWT-токена</returns>
     public string GenerateToken(string userId, string username)
     {
         var tokenHandler = new JwtSecurityTokenHandler();

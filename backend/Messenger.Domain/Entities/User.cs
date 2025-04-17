@@ -1,15 +1,38 @@
 namespace Messenger.Domain.Entities;
 
+/// <summary>
+/// Сущность пользователя мессенджера.
+/// </summary>
 public class User
 {
+    /// <summary>
+    /// Уникальный идентификатор пользователя.
+    /// </summary>
     public Guid Id { get; set; }
+
+    /// <summary>
+    /// Имя пользователя (логин).
+    /// </summary>
     public string Username { get; set; } = string.Empty;
-    // Для демонстрации пароль хранится в открытом виде – в продакшене используйте хэширование!
+
+    /// <summary>
+    /// Пароль пользователя (в демонстрационных целях хранится в открытом виде).
+    /// В реальном приложении необходимо использовать хэширование!
+    /// </summary>
     public string Password { get; set; } = string.Empty;
-    // Публичный ключ (Base64), который можно отправлять клиенту
+
+    /// <summary>
+    /// Публичный ключ пользователя в формате Base64. Отправляется другим участникам.
+    /// </summary>
     public string PublicKey { get; set; } = string.Empty;
-    // Приватный ключ – хранится зашифрованным (см. AuthService)
+
+    /// <summary>
+    /// Приватный ключ пользователя, зашифрованный при сохранении.
+    /// </summary>
     public string PrivateKey { get; set; } = string.Empty;
-        
+
+    /// <summary>
+    /// Коллекция сообщений, отправленных этим пользователем.
+    /// </summary>
     public ICollection<Message> SentMessages { get; set; } = new List<Message>();
 }

@@ -9,7 +9,7 @@ using Messenger.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Controllers & Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
@@ -36,7 +36,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// JWT authentication
+// JWT Auth
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -52,8 +52,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// Infrastructure and security
-builder.Services.AddInfrastructure(builder.Configuration);
+// Custom DI
+builder.Services.AddSingleton(builder.Configuration);
 builder.Services.AddScoped<EncryptionService>();
 
 // Application services
@@ -65,20 +65,15 @@ builder.Services.AddScoped<IKeyStoreService, KeyStoreService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-
-var app = builder.Build();
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

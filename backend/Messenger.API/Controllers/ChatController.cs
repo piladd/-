@@ -1,13 +1,13 @@
-using System.Threading.Tasks;
-using Messenger.Domain.Entities;
 using Messenger.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Messenger.Application.Services;
 using Microsoft.AspNetCore.Authorization;
-using Messenger.Domain.Models;
+using Messenger.API.Models;
 
 namespace Messenger.API.Controllers;
 
+/// <summary>
+/// Контроллер для управления чатами и сообщениями.
+/// </summary>
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
@@ -15,25 +15,41 @@ public class ChatController : ControllerBase
 {
     private readonly IChatService _chatService;
 
+    /// <summary>
+    /// Конструктор контроллера чатов.
+    /// </summary>
     public ChatController(IChatService chatService)
     {
         _chatService = chatService;
     }
 
+    /// <summary>
+    /// Получает список чатов, в которых участвует пользователь.
+    /// </summary>
+    /// <param name="userId">ID пользователя</param>
+    /// <returns>Список чатов</returns>
     [HttpGet("{userId}")]
     public async Task<IActionResult> GetChats(string userId)
     {
         try
         {
-            var chats = await _chatService.GetAllChatsAsync();
+            if (!Guid.TryParse(userId, out var guid))
+                return BadRequest("Некорректный userId");
+
+            var chats = await _chatService.GetAllChatsAsync(guid);
             return Ok(chats);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return StatusCode(500, "Ошибка при получении списка чатов.");
+            return StatusCode(500, $"Ошибка при получении чатов: {ex.Message}");
         }
     }
 
+    /// <summary>
+    /// Получает чат по его ID.
+    /// </summary>
+    /// <param name="id">ID чата</param>
+    /// <returns>Объект чата или сообщение об ошибке</returns>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -48,6 +64,12 @@ public class ChatController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Отправляет сообщение в указанный чат.
+    /// </summary>
+    /// <param name="chatId">ID чата</param>
+    /// <param name="request">Данные сообщения: отправитель, получатель, текст</param>
+    /// <returns>Статус отправки</returns>
     [HttpPost("{chatId}/message")]
     public async Task<IActionResult> SendMessage(Guid chatId, [FromBody] SendMessageRequest request)
     {
@@ -65,6 +87,11 @@ public class ChatController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Получает все сообщения из заданного чата.
+    /// </summary>
+    /// <param name="chatId">ID чата</param>
+    /// <returns>Список сообщений</returns>
     [HttpGet("{chatId}/messages")]
     public async Task<IActionResult> GetMessages(Guid chatId)
     {
@@ -78,16 +105,4 @@ public class ChatController : ControllerBase
             return StatusCode(500, "Ошибка при получении сообщений.");
         }
     }
-}
-
-public class ChatRequest
-{
-    public string Title { get; set; } = string.Empty;
-}
-
-public class SendMessageRequest
-{
-    public Guid SenderId { get; set; }
-    public Guid ReceiverId { get; set; }
-    public string MessageText { get; set; } = string.Empty;
 }

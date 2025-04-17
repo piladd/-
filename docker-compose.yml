@@ -2,15 +2,14 @@ services:
   messenger-api:
     build:
       context: ./backend
-      dockerfile: ./Dockerfile
+      dockerfile: Dockerfile
     ports:
-      - "5000:8080"
-    depends_on:
-      - db
+      - "5000:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Database=messengerdb;Username=postgres;Password=postgres
-    command: ["./wait-for-it.sh", "db:5432", "--", "dotnet", "Messenger.API.dll"]
+    depends_on:
+      - db
 
   db:
     image: postgres:15
