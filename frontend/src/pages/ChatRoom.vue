@@ -1,43 +1,56 @@
 <template>
   <div class="chat-room">
-    <ChatList class="chat-list" />
-    <div class="chat-content">
-      <ChatWindow :messages="messages" />
-      <MessageInput @send="handleSend" />
+    <ChatList :chats="chatStore.chats" :selected-id="chatStore.activeChatId" @select="chatStore.selectChat" />
+
+    <div class="main">
+      <div class="messages">
+        <MessageBubble
+            v-for="msg in formattedMessages"
+            :key="msg.id"
+            :text="msg.text"
+            :sender-id="msg.senderId"
+            :sent-at="msg.timestamp"
+            :is-mine="msg.isMine"
+        />
+        <div v-if="typingUser" class="typing-indicator">{{ typingUser }} печатает...</div>
+      </div>
+
+      <MessageInput />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
 import ChatList from '@/components/ChatList.vue'
-import ChatWindow from '@/components/ChatWindow.vue'
+import MessageBubble from '@/components/MessageBubble.vue'
 import MessageInput from '@/components/MessageInput.vue'
-import { ref } from 'vue'
-import type { Message } from '@/types/Message'
+import { useChatStore } from '@/store/chat'
+import { useMessageStore } from '@/store/message'
+import { useUserStore } from '@/store/user'
+import { initWebSocket } from '@/services/websocket'
 
-const messages = ref<Message[]>([
-  {
-    id: '1',
-    text: 'Привет!',
-    timestamp: new Date().toLocaleTimeString(),
-    isMine: false
-  },
-  {
-    id: '2',
-    text: 'Как дела?',
-    timestamp: new Date().toLocaleTimeString(),
-    isMine: true
-  }
-])
+const chatStore = useChatStore()
+const messageStore = useMessageStore()
+const userStore = useUserStore()
 
-const handleSend = (text: string) => {
-  messages.value.push({
-    id: crypto.randomUUID(),
-    text,
-    timestamp: new Date().toLocaleTimeString(),
-    isMine: true
-  })
-}
+onMounted(() => {
+  chatStore.fetchChats()
+  userStore.fetchUsers()
+  initWebSocket()
+})
+
+const typingUser = computed(() => {
+  const id = chatStore.typingBy
+  return id ? userStore.getUserById(id)?.username : null
+})
+
+const formattedMessages = computed(() =>
+    messageStore.messages.map(msg => ({
+      ...msg,
+      isMine: msg.senderId === userStore.currentUser?.id
+    }))
+)
 </script>
 
 <style scoped>
@@ -45,13 +58,23 @@ const handleSend = (text: string) => {
   display: flex;
   height: 100vh;
 }
-.chat-list {
-  width: 250px;
-  border-right: 1px solid #ddd;
-}
-.chat-content {
+.main {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+.messages {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.typing-indicator {
+  font-size: 13px;
+  color: #888;
+  margin-top: 4px;
+  font-style: italic;
 }
 </style>

@@ -1,7 +1,7 @@
+// 📁 services/crypto.service.ts
 import { openDB } from 'idb'
 
 // ======= КОНСТАНТЫ =======
-
 const RSA_ALGO = {
     name: 'RSA-OAEP',
     modulusLength: 2048,
@@ -13,7 +13,6 @@ const DB_NAME = 'crypto-keys'
 const DB_STORE = 'rsa-private'
 
 // ======= IndexedDB для приватного ключа =======
-
 async function getKeyDB() {
     return await openDB(DB_NAME, 1, {
         upgrade(db) {
@@ -24,14 +23,12 @@ async function getKeyDB() {
     })
 }
 
-// Сохраняем приватный ключ в IndexedDB
 export async function savePrivateKey(key: CryptoKey) {
     const db = await getKeyDB()
     const exported = await crypto.subtle.exportKey('pkcs8', key)
     await db.put(DB_STORE, exported, 'privateKey')
 }
 
-// Загружаем приватный ключ из IndexedDB
 export async function loadPrivateKey(): Promise<CryptoKey | null> {
     const db = await getKeyDB()
     const exported = await db.get(DB_STORE, 'privateKey')
@@ -41,32 +38,26 @@ export async function loadPrivateKey(): Promise<CryptoKey | null> {
 }
 
 // ======= RSA ключи =======
-
-// Генерация пары ключей
 export async function generateKeyPair(): Promise<CryptoKeyPair> {
     return await crypto.subtle.generateKey(RSA_ALGO, true, ['encrypt', 'decrypt'])
 }
 
-// Экспорт публичного ключа в строку base64
 export async function exportPublicKey(key: CryptoKey): Promise<string> {
     const exported = await crypto.subtle.exportKey('spki', key)
     return bufferToBase64(exported)
 }
 
-// Импорт публичного ключа из строки base64
 export async function importPublicKey(keyStr: string): Promise<CryptoKey> {
     const buffer = base64ToBuffer(keyStr)
     return await crypto.subtle.importKey('spki', buffer, RSA_ALGO, true, ['encrypt'])
 }
 
-// Шифрование строки другим публичным ключом
 export async function encryptMessage(plaintext: string, publicKey: CryptoKey): Promise<string> {
     const encoded = new TextEncoder().encode(plaintext)
     const encrypted = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, publicKey, encoded)
     return bufferToBase64(encrypted)
 }
 
-// Дешифровка своим приватным ключом
 export async function decryptMessage(encryptedBase64: string, privateKey: CryptoKey): Promise<string> {
     const encryptedBuffer = base64ToBuffer(encryptedBase64)
     const decrypted = await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, privateKey, encryptedBuffer)
@@ -74,20 +65,14 @@ export async function decryptMessage(encryptedBase64: string, privateKey: Crypto
 }
 
 // ======= Гибридное шифрование (AES + RSA) =======
-
-// Генерация случайного AES-ключа
 export async function generateAESKey(): Promise<CryptoKey> {
     return await crypto.subtle.generateKey(
-        {
-            name: 'AES-GCM',
-            length: 256,
-        },
+        { name: 'AES-GCM', length: 256 },
         true,
         ['encrypt', 'decrypt']
     )
 }
 
-// Шифруем сообщение с AES и шифруем AES-ключ RSA
 export async function hybridEncrypt(message: string, rsaPublicKey: CryptoKey): Promise<{
     encryptedKey: string,
     encryptedData: string,
@@ -117,7 +102,6 @@ export async function hybridEncrypt(message: string, rsaPublicKey: CryptoKey): P
     }
 }
 
-// Расшифровка гибридного сообщения
 export async function hybridDecrypt(encrypted: {
     encryptedKey: string
     encryptedData: string
@@ -150,8 +134,6 @@ export async function hybridDecrypt(encrypted: {
 }
 
 // ======= Цифровая подпись =======
-
-// Создаём ключи RSA для подписи
 export async function generateSigningKeyPair(): Promise<CryptoKeyPair> {
     return await crypto.subtle.generateKey(
         {
@@ -165,14 +147,12 @@ export async function generateSigningKeyPair(): Promise<CryptoKeyPair> {
     )
 }
 
-// Подписываем сообщение
 export async function signMessage(message: string, privateKey: CryptoKey): Promise<string> {
     const encoded = new TextEncoder().encode(message)
     const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', privateKey, encoded)
     return bufferToBase64(signature)
 }
 
-// Проверяем подпись
 export async function verifySignature(message: string, signatureBase64: string, publicKey: CryptoKey): Promise<boolean> {
     const encoded = new TextEncoder().encode(message)
     const signature = base64ToBuffer(signatureBase64)
@@ -180,7 +160,6 @@ export async function verifySignature(message: string, signatureBase64: string, 
 }
 
 // ======= Утилиты =======
-
 function bufferToBase64(buffer: ArrayBuffer): string {
     return btoa(String.fromCharCode(...new Uint8Array(buffer)))
 }

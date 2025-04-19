@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Login from '@/pages/Login.vue'
-import ChatRoom from '@/pages/ChatRoom.vue'
+import ChatRoom from "@/pages/ChatRoom.vue";
+import Login from "@/pages/Login.vue";
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -8,9 +8,7 @@ const routes = [
   { path: '/chat', component: ChatRoom }
 ]
 
-const router = createRouter({
+export default createRouter({
   history: createWebHistory(),
   routes
 })
-
-export default router

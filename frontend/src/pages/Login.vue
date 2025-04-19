@@ -4,11 +4,22 @@
     <form @submit.prevent="login">
       <input
           v-model="username"
-          placeholder="Введите имя пользователя"
+          placeholder="Логин"
+          required
+      />
+      <input
+          v-model="password"
+          type="password"
+          placeholder="Пароль"
           required
       />
       <button type="submit">Войти</button>
     </form>
+
+    <p class="register-link">
+      Нет аккаунта?
+      <router-link to="/register">Зарегистрироваться</router-link>
+    </p>
   </div>
 </template>
 
@@ -19,22 +30,26 @@ import { useRouter } from 'vue-router'
 import { KeyManagerService } from '@/services/key-manager.service'
 
 const username = ref('')
+const password = ref('')
 const userStore = useUserStore()
 const router = useRouter()
 
 const login = async () => {
-  const trimmed = username.value.trim()
-  if (!trimmed) return
+  const trimmedUsername = username.value.trim()
+  const trimmedPassword = password.value.trim()
+  if (!trimmedUsername || !trimmedPassword) return
 
-  // Сохраняем локально
-  localStorage.setItem('userId', trimmed)
-  userStore.login(trimmed)
+  try {
+    await userStore.login(trimmedUsername, trimmedPassword)
 
-  // Генерация ключей (если нужно)
-  await KeyManagerService.ensurePrivateKey()
+    // Генерация ключей после входа
+    await KeyManagerService.ensurePrivateKey()
 
-  // Редирект
-  await router.push('/chat')
+    await router.push('/chat')
+  } catch (e) {
+    alert('Неверный логин или пароль')
+    console.error(e)
+  }
 }
 </script>
 
@@ -62,5 +77,8 @@ button {
   color: white;
   border: none;
   cursor: pointer;
+}
+.register-link {
+  margin-top: 10px;
 }
 </style>

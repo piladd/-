@@ -4,11 +4,22 @@
     <form @submit.prevent="register">
       <input
           v-model="username"
-          placeholder="Введите имя пользователя"
+          placeholder="Логин"
+          required
+      />
+      <input
+          v-model="password"
+          type="password"
+          placeholder="Пароль"
           required
       />
       <button type="submit">Зарегистрироваться</button>
     </form>
+
+    <p class="login-link">
+      Уже есть аккаунт?
+      <router-link to="/login">Войти</router-link>
+    </p>
   </div>
 </template>
 
@@ -19,22 +30,26 @@ import { useUserStore } from '@/store/user'
 import { KeyManagerService } from '@/services/key-manager.service'
 
 const username = ref('')
+const password = ref('')
 const router = useRouter()
 const userStore = useUserStore()
 
 const register = async () => {
-  const trimmed = username.value.trim()
-  if (!trimmed) return
+  const trimmedUsername = username.value.trim()
+  const trimmedPassword = password.value.trim()
+  if (!trimmedUsername || !trimmedPassword) return
 
-  // Сохраняем пользователя (пока в localStorage)
-  localStorage.setItem('userId', trimmed)
-  userStore.login(trimmed)
+  try {
+    await userStore.register(trimmedUsername, trimmedPassword)
 
-  // Генерируем и отправляем ключ
-  await KeyManagerService.ensurePrivateKey()
+    // Генерация ключей (для E2EE)
+    await KeyManagerService.ensurePrivateKey()
 
-  // Перенаправляем в чат
-  await router.push('/chat')
+    await router.push('/chat')
+  } catch (e) {
+    alert('Ошибка регистрации')
+    console.error(e)
+  }
 }
 </script>
 
@@ -62,5 +77,8 @@ button {
   color: white;
   border: none;
   cursor: pointer;
+}
+.login-link {
+  margin-top: 10px;
 }
 </style>
