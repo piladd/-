@@ -17,4 +17,15 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.34.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Attachment\DTOs\" />
+    <Folder Include="Attachment\Services\" />
+    <Folder Include="Attachment\Validators\" />
+    <Folder Include="Auth\Validators\" />
+    <Folder Include="Chat\DTOs\" />
+    <Folder Include="Chat\Services\" />
+    <Folder Include="Chat\Validators\" />
+    <Folder Include="User\Validators\" />
+  </ItemGroup>
+
 </Project>

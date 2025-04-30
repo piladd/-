@@ -1,0 +1,9 @@
+namespace Messenger.Application.User.DTOs;
+
+public class UserProfileDto
+{
+    public Guid Id { get; set; }
+    public string Username { get; set; } = default!;
+    public string DisplayName { get; set; } = default!;
+    public string? AvatarUrl { get; set; }
+}
