@@ -1,4 +1,5 @@
-using Messenger.Infrastructure.Data;
+using System;
+using Messenger.Persistence.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 

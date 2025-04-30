@@ -1,32 +1,19 @@
+using System;
+using System.Collections.Generic;
+
 namespace Messenger.Domain.Entities;
 
 /// <summary>
-/// Сущность чата, содержащая список участников и сообщений.
+/// Диалог 1-на-1
 /// </summary>
 public class Chat
 {
-    /// <summary>
-    /// Уникальный идентификатор чата.
-    /// </summary>
-    public Guid Id { get; set; }
-
-    /// <summary>
-    /// Название чата.
-    /// </summary>
-    public string Title { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Дата и время создания чата.
-    /// </summary>
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid UserAId { get; set; }
+    public Guid UserBId { get; set; }
+    public string Title { get; set; } = default!;
     public DateTime CreatedAt { get; set; }
 
-    /// <summary>
-    /// Список идентификаторов участников чата.
-    /// </summary>
-    public List<Guid> ParticipantIds { get; set; } = new();
-
-    /// <summary>
-    /// Коллекция сообщений, отправленных в этом чате.
-    /// </summary>
-    public ICollection<Message> Messages { get; set; } = new List<Message>();
+    public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
+    public List<Guid> ParticipantIds { get; set; }
 }

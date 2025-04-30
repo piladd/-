@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Messenger.Infrastructure.Data;
+namespace Messenger.Persistence.DbContext;
 
 /// <summary>
 /// Фабрика для создания контекста базы данных во время разработки и миграций.

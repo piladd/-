@@ -1,5 +1,5 @@
 using System;
-using Messenger.Infrastructure.Data;
+using Messenger.Persistence.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;

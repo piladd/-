@@ -1,103 +1,106 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using Messenger.Infrastructure.Storage;
+using Microsoft.Extensions.Options;
 using Minio;
 using Minio.DataModel.Args;
-using Messenger.Application.Common.Storage;
-using Microsoft.Extensions.Options;
-using System.Text;
+using Minio.Exceptions;
 
-namespace Messenger.Infrastructure.Storage;
+// Ваш IStorageService
 
-/// <summary>
-/// Сервис для работы с MinIO хранилищем.
-/// </summary>
-public class MinioStorageService : IStorageService
+namespace Messenger.Application.Common.Storage
 {
-    private readonly IMinioClient _minioClient;
-    private readonly MinioOptions _options;
-
-    public MinioStorageService(IMinioClient minioClient, IOptions<MinioOptions> options)
+    /// <summary>
+    /// Сервис для работы с MinIO хранилищем.
+    /// </summary>
+    public class MinioStorageService : IStorageService
     {
-        _minioClient = minioClient;
-        _options = options.Value;
-    }
+        private readonly MinioClient _minioClient;
+        private readonly MinioOptions _options;
 
-    public async Task<string> UploadAsync(string fileName, byte[] content)
-    {
-        await EnsureBucketExistsAsync();
-
-        var objectName = $"{Guid.NewGuid()}_{fileName}";
-
-        using var stream = new MemoryStream(content);
-
-        var putObjectArgs = new PutObjectArgs()
-            .WithBucket(_options.BucketName)
-            .WithObject(objectName)
-            .WithStreamData(stream)
-            .WithObjectSize(stream.Length)
-            .WithContentType("application/octet-stream");
-
-        await _minioClient.PutObjectAsync(putObjectArgs);
-
-        return objectName;
-    }
-
-    public async Task<byte[]?> DownloadAsync(string objectName)
-    {
-        try
+        public MinioStorageService(MinioClient minioClient, IOptions<MinioOptions> options)
         {
-            using var ms = new MemoryStream();
+            _minioClient = minioClient;
+            _options     = options.Value;
+        }
 
-            var getArgs = new GetObjectArgs()
+        public async Task<string> UploadAsync(string fileName, byte[] content)
+        {
+            await EnsureBucketExistsAsync();
+
+            var objectName = $"{Guid.NewGuid()}_{fileName}";
+            using var stream = new MemoryStream(content);
+
+            var putArgs = new PutObjectArgs()
                 .WithBucket(_options.BucketName)
                 .WithObject(objectName)
-                .WithCallbackStream(stream => stream.CopyTo(ms));
+                .WithStreamData(stream)
+                .WithObjectSize(stream.Length)
+                .WithContentType("application/octet-stream");
 
-            await _minioClient.GetObjectAsync(getArgs);
-            return ms.ToArray();
+            await _minioClient.PutObjectAsync(putArgs);
+            return objectName;
         }
-        catch (MinioException)
+
+        public async Task<byte[]?> DownloadAsync(string objectName)
         {
-            return null;
+            try
+            {
+                using var ms = new MemoryStream();
+
+                var getArgs = new GetObjectArgs()
+                    .WithBucket(_options.BucketName)
+                    .WithObject(objectName)
+                    .WithCallbackStream(s => s.CopyTo(ms));
+
+                await _minioClient.GetObjectAsync(getArgs);
+                return ms.ToArray();
+            }
+            catch (MinioException)
+            {
+                return null;
+            }
         }
-    }
 
-    public async Task DeleteAsync(string objectName)
-    {
-        var removeArgs = new RemoveObjectArgs()
-            .WithBucket(_options.BucketName)
-            .WithObject(objectName);
-
-        await _minioClient.RemoveObjectAsync(removeArgs);
-    }
-
-    public async Task<bool> ExistsAsync(string objectName)
-    {
-        try
+        public async Task DeleteAsync(string objectName)
         {
-            var statArgs = new StatObjectArgs()
+            var rmArgs = new RemoveObjectArgs()
                 .WithBucket(_options.BucketName)
                 .WithObject(objectName);
 
-            await _minioClient.StatObjectAsync(statArgs);
-            return true;
+            await _minioClient.RemoveObjectAsync(rmArgs);
         }
-        catch (MinioException)
+
+        public async Task<bool> ExistsAsync(string objectName)
         {
-            return false;
+            try
+            {
+                var statArgs = new StatObjectArgs()
+                    .WithBucket(_options.BucketName)
+                    .WithObject(objectName);
+
+                await _minioClient.StatObjectAsync(statArgs);
+                return true;
+            }
+            catch (MinioException)
+            {
+                return false;
+            }
         }
-    }
 
-    private async Task EnsureBucketExistsAsync()
-    {
-        var bucketExistsArgs = new BucketExistsArgs()
-            .WithBucket(_options.BucketName);
-
-        bool exists = await _minioClient.BucketExistsAsync(bucketExistsArgs);
-        if (!exists)
+        private async Task EnsureBucketExistsAsync()
         {
-            var makeArgs = new MakeBucketArgs()
+            var existsArgs = new BucketExistsArgs()
                 .WithBucket(_options.BucketName);
 
-            await _minioClient.MakeBucketAsync(makeArgs);
+            bool exists = await _minioClient.BucketExistsAsync(existsArgs);
+            if (!exists)
+            {
+                var makeArgs = new MakeBucketArgs()
+                    .WithBucket(_options.BucketName);
+                await _minioClient.MakeBucketAsync(makeArgs);
+            }
         }
     }
 }

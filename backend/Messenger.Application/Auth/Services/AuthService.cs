@@ -1,90 +1,103 @@
 using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
-using Messenger.Application.Interfaces;
+using Messenger.Application.Auth.DTOs;
 using Messenger.Domain.Entities;
-using Messenger.Infrastructure.Repositories;
+using Messenger.Persistence.Repositories;
 using Messenger.Security;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 
-namespace Messenger.Application.Services;
-
-/// <summary>
-/// Сервис авторизации и регистрации пользователей с генерацией ключей и шифрованием.
-/// </summary>
-public class AuthService : IAuthService
+namespace Messenger.Application.Auth.Services
 {
-    private readonly UserRepository _userRepository;
-    private readonly EncryptionService _encryptionService;
-    private readonly string _masterKey;
-
     /// <summary>
-    /// Конструктор сервиса, получает зависимости и мастер-ключ из конфигурации.
+    /// Сервис авторизации и регистрации пользователей с генерацией JWT и шифрованием ключей.
     /// </summary>
-    public AuthService(UserRepository userRepository, EncryptionService encryptionService, IConfiguration configuration)
+    public class AuthService : IAuthService
     {
-        _userRepository = userRepository;
-        _encryptionService = encryptionService;
-        _masterKey = configuration["Security:MasterKey"] ?? throw new ArgumentNullException("MasterKey not found in configuration.");
-    }
+        private readonly UserRepository _userRepository;
+        private readonly EncryptionService _encryptionService;
+        private readonly IConfiguration _configuration;
+        private readonly string _masterKey;
 
-    /// <summary>
-    /// Проверяет логин и пароль пользователя и возвращает объект пользователя при успешной аутентификации.
-    /// </summary>
-    /// <param name="username">Имя пользователя</param>
-    /// <param name="password">Пароль</param>
-    /// <returns>Пользователь или null, если данные неверны</returns>
-    public async Task<User> AuthenticateAsync(string username, string password)
-    {
-        try
+        public AuthService(
+            UserRepository userRepository,
+            EncryptionService encryptionService,
+            IConfiguration configuration)
         {
-            var user = await _userRepository.GetUserByUsernameAsync(username);
-            if (user == null || user.Password != password)
-                return null!;
-
-            return user;
+            _userRepository    = userRepository;
+            _encryptionService = encryptionService;
+            _configuration     = configuration;
+            _masterKey         = configuration["Security:MasterKey"]
+                                 ?? throw new InvalidOperationException("MasterKey not found in configuration.");
         }
-        catch (Exception ex)
+
+        public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
-            throw new ApplicationException("Ошибка аутентификации.", ex);
-        }
-    }
+            // Проверяем, что пользователя с таким именем ещё нет
+            if (await _userRepository.GetByUsernameAsync(request.Username) is not null)
+                throw new ApplicationException("Пользователь с таким именем уже существует.");
 
-    /// <summary>
-    /// Регистрирует нового пользователя, генерирует асимметричные ключи и шифрует приватный ключ.
-    /// </summary>
-    /// <param name="username">Имя пользователя</param>
-    /// <param name="password">Пароль</param>
-    /// <returns>Созданный пользователь</returns>
-    public async Task<User> RegisterAsync(string username, string password)
-    {
-        try
-        {
-            var existing = await _userRepository.GetUserByUsernameAsync(username);
-            if (existing != null)
-                throw new Exception("Пользователь с таким именем уже существует.");
+            // Генерируем ключи и шифруем приватный
+            var (pubBytes, privBytes) = _encryptionService.GenerateAsymmetricKeys();
+            var publicKey            = Convert.ToBase64String(pubBytes);
+            var encryptedPrivateKey  = _encryptionService.EncryptPrivateKey(privBytes, _masterKey);
 
-            // Генерация пары ключей
-            var (publicKeyBytes, privateKeyBytes) = _encryptionService.GenerateAsymmetricKeys();
-
-            // Сохранение публичного и зашифрованного приватного ключа
-            string publicKey = Convert.ToBase64String(publicKeyBytes);
-            string encryptedPrivateKey = _encryptionService.EncryptPrivateKey(privateKeyBytes, _masterKey);
-
-            var user = new User
-            {
-                Username = username,
-                Password = password,
-                PublicKey = publicKey,
+            // Создаём и сохраняем сущность User
+            var user = new Domain.Entities.User {
+                Username   = request.Username,
+                Password   = request.Password,
+                PublicKey  = publicKey,
                 PrivateKey = encryptedPrivateKey
             };
-
             await _userRepository.AddUserAsync(user);
 
-            return user;
+            // Формируем ответ с токеном, ID и именем
+            return new AuthResponse {
+                Token    = GenerateJwt(user),
+                UserId   = user.Id,
+                Username = user.Username
+            };
         }
-        catch (Exception ex)
+
+        public async Task<AuthResponse?> LoginAsync(LoginRequest request)
         {
-            throw new ApplicationException("Ошибка регистрации пользователя.", ex);
+            var user = await _userRepository.GetByUsernameAsync(request.Username);
+            if (user == null || user.Password != request.Password)
+                return null;
+
+            return new AuthResponse {
+                Token    = GenerateJwt(user),
+                UserId   = user.Id,
+                Username = user.Username
+            };
+        }
+
+        private string GenerateJwt(Domain.Entities.User user)
+        {
+            var secret      = _configuration["Jwt:Secret"]
+                              ?? throw new InvalidOperationException("JWT secret is not configured.");
+            var key         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+            var creds       = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var expiresHour = int.TryParse(_configuration["Jwt:ExpiresHours"], out var h) ? h : 12;
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name,           user.Username)
+            };
+
+            var token = new JwtSecurityToken(
+                issuer:             _configuration["Jwt:Issuer"],
+                audience:           _configuration["Jwt:Audience"],
+                claims:             claims,
+                expires:            DateTime.UtcNow.AddHours(expiresHour),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

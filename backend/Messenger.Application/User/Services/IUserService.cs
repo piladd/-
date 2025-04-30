@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Messenger.Application.User.DTOs;
 
 namespace Messenger.Application.User.Services;

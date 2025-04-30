@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Builder;
+
 public static class ApplicationBuilderExtensions
 {
     public static WebApplication UseApplicationMiddlewares(this WebApplication app)

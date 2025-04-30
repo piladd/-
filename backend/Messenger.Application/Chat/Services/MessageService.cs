@@ -2,56 +2,63 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Messenger.Application.Interfaces;
+using Messenger.Application.Chat.DTOs;
 using Messenger.Domain.Entities;
-using Messenger.Domain.Models;
-using Messenger.Security;
+using Messenger.Persistence.Repositories;
 
-namespace Messenger.Application.Services;
+namespace Messenger.Application.Chat.Services;
 
 /// <summary>
-/// Сервис для отправки сообщений (временно работает в памяти).
+/// Сервис для отправки и получения сообщений между пользователями.
 /// </summary>
 public class MessageService : IMessageService
 {
-    /// <summary>
-    /// Внутренний список сообщений, используется как временное хранилище.
-    /// </summary>
-    private readonly List<Message> _messages = new(); // In-memory хранилище
+    private readonly MessageRepository _messageRepository;
 
-    /// <summary>
-    /// Сервис шифрования. Можно внедрить через DI, если потребуется.
-    /// </summary>
-    private readonly EncryptionService _encryptionService = new(); // можно внедрить, если нужно
+    public MessageService(MessageRepository messageRepository)
+    {
+        _messageRepository = messageRepository;
+    }
 
-    /// <summary>
-    /// Отправляет сообщение, создавая объект Message и добавляя его в память.
-    /// </summary>
-    /// <param name="request">Запрос, содержащий ID отправителя, получателя и текст</param>
-    /// <returns>Созданное сообщение</returns>
-    public Task<Message> SendMessageAsync(SendMessageRequest request)
+    public async Task<MessageDto> SendMessageAsync(Guid senderId, SendMessageRequest request)
     {
         var message = new Message
         {
-            Id = Guid.NewGuid(),
-            ChatId = Guid.NewGuid(), // если у тебя нет чата — заглушка
-            SenderId = Guid.Parse(request.SenderId),
-            ReceiverId = Guid.Parse(request.ReceiverId),
-            Content = request.Content,
-            Timestamp = DateTime.UtcNow
+            SenderId = senderId,
+            ReceiverId = request.ReceiverId,
+            EncryptedContent = request.EncryptedContent,
+            EncryptedAesKey = request.EncryptedAesKey,
+            Iv = request.Iv,
+            SentAt = DateTime.UtcNow
         };
 
-        _messages.Add(message);
+        await _messageRepository.AddAsync(message);
 
-        return Task.FromResult(message);
+        return new MessageDto
+        {
+            Id = message.Id,
+            SenderId = message.SenderId,
+            ReceiverId = message.ReceiverId,
+            EncryptedContent = message.EncryptedContent,
+            EncryptedAesKey = message.EncryptedAesKey,
+            Iv = message.Iv,
+            SentAt = message.SentAt
+        };
     }
 
-    /// <summary>
-    /// Возвращает все сообщения из внутреннего списка.
-    /// </summary>
-    /// <returns>Список сообщений</returns>
-    public IEnumerable<Message> GetMessages()
+    public async Task<List<MessageDto>> GetChatHistoryAsync(Guid senderId, Guid receiverId)
     {
-        return _messages;
+        var messages = await _messageRepository.GetMessagesBetweenUsersAsync(senderId, receiverId);
+
+        return messages.Select(m => new MessageDto
+        {
+            Id = m.Id,
+            SenderId = m.SenderId,
+            ReceiverId = m.ReceiverId,
+            EncryptedContent = m.EncryptedContent,
+            EncryptedAesKey = m.EncryptedAesKey,
+            Iv = m.Iv,
+            SentAt = m.SentAt
+        }).ToList();
     }
 }

@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Messenger.Domain.Entities;
 
 namespace Messenger.Application.Interfaces;

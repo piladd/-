@@ -1,13 +1,8 @@
-using Microsoft.EntityFrameworkCore;
-using Messenger.Infrastructure;
-using Messenger.Application.Interfaces;
-using Messenger.Domain.Entities;
-using Messenger.Infrastructure.Repositories;
-using Messenger.Security;
 using System;
-using System.IO;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
+using Messenger.Application.Interfaces;
+using Messenger.Security;
+using Messenger.Infrastructure.Repositories;
 
 namespace Messenger.Application.Services;
 
@@ -53,7 +48,7 @@ public class AttachmentService : IAttachmentService
             var (iv, cipherBytes) = _encryptionService.EncryptWithAes(fileDataBase64, symKey);
 
             // Сохраняем вложение в базу
-            var attachment = new Attachment
+            var attachment = new Domain.Entities.Attachment
             {
                 FileName = fileName,
                 EncryptedData = cipherBytes,

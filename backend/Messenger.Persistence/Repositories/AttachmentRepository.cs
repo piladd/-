@@ -1,7 +1,7 @@
 using Messenger.Domain.Entities;
-using Messenger.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using Messenger.Persistence.DbContext;
 
 namespace Messenger.Infrastructure.Repositories;
 

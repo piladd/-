@@ -1,3 +1,5 @@
+using System;
+
 namespace Messenger.Application.User.DTOs;
 
 public class UserSearchResultDto

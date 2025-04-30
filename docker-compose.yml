@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   messenger-api:
     build:
@@ -8,6 +9,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Database=messengerdb;Username=postgres;Password=postgres
+      - ASPNETCORE_URLS=http://+:80
+      - Jwt__Secret=${JWT_SECRET}
+      - Jwt__Issuer=MessengerApi
+      - Jwt__Audience=MessengerClients
+      - Jwt__ExpiresHours=12
+      - Security__MasterKey=${MASTER_KEY}
     depends_on:
       - db
 

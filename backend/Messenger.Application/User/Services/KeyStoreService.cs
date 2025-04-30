@@ -2,9 +2,9 @@ using System.Threading.Tasks;
 using Messenger.Infrastructure;
 using Messenger.Application.Interfaces;
 using Messenger.Domain.Entities;
-using Messenger.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
+using Messenger.Persistence.DbContext;
 
 namespace Messenger.Application.Services;
 

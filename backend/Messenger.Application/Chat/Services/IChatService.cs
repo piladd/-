@@ -15,14 +15,14 @@ public interface IChatService
     /// </summary>
     /// <param name="userId">ID пользователя</param>
     /// <returns>Список чатов</returns>
-    Task<IEnumerable<Chat>> GetAllChatsAsync(Guid userId);
+    Task<IEnumerable<Domain.Entities.Chat>> GetAllChatsAsync(Guid userId);
 
     /// <summary>
     /// Возвращает чат по его ID.
     /// </summary>
     /// <param name="chatId">ID чата</param>
     /// <returns>Объект чата или null, если не найден</returns>
-    Task<Chat?> GetChatByIdAsync(Guid chatId);
+    Task<Domain.Entities.Chat?> GetChatByIdAsync(Guid chatId);
 
     /// <summary>
     /// Создаёт новый чат с заданным названием и участниками.
@@ -30,7 +30,7 @@ public interface IChatService
     /// <param name="name">Название чата</param>
     /// <param name="participantIds">Список ID участников</param>
     /// <returns>Созданный чат</returns>
-    Task<Chat> CreateChatAsync(string name, List<Guid> participantIds);
+    Task<Domain.Entities.Chat> CreateChatAsync(string name, List<Guid> participantIds);
 
     /// <summary>
     /// Отправляет сообщение в указанный чат.

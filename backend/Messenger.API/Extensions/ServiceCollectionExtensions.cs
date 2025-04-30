@@ -1,74 +1,106 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using Minio;
-using Microsoft.OpenApi.Models;
+using Minio.DataModel.Args;
+using Minio.Exceptions;
+using Microsoft.Extensions.Options;
 using Messenger.Application.Common.Storage;
-using Messenger.Infrastructure.Storage;
-using Messenger.Application.Auth.Services;
-using Messenger.Application.Services;
 
-public static class ServiceCollectionExtensions
+namespace Messenger.Infrastructure.Storage
 {
-    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
+    /// <summary>
+    /// Сервис для работы с MinIO хранилищем.
+    /// </summary>
+    public class MinioStorageService : IStorageService
     {
-        services.Configure<MinioOptions>(configuration.GetSection("Minio"));
+        private readonly MinioClient _minioClient;
+        private readonly MinioOptions _options;
 
-        services.AddSingleton<IMinioClient>(sp =>
+        public MinioStorageService(MinioClient minioClient, IOptions<MinioOptions> options)
         {
-            var options = configuration.GetSection("Minio").Get<MinioOptions>();
+            _minioClient = minioClient;
+            _options     = options.Value;
+        }
 
-            return new MinioClient()
-                .WithEndpoint(options.Endpoint)
-                .WithCredentials(options.AccessKey, options.SecretKey)
-                .Build();
-        });
-
-        services.AddScoped<IStorageService, MinioStorageService>();
-
-        return services;
-    }
-
-    public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddCors();
-
-        services.AddEndpointsApiExplorer();
-
-        services.AddSwaggerGen(opt =>
+        public async Task<string> UploadAsync(string fileName, byte[] content)
         {
-            opt.SwaggerDoc("v1", new OpenApiInfo
+            await EnsureBucketExistsAsync();
+
+            var objectName = $"{Guid.NewGuid()}_{fileName}";
+            using var stream = new MemoryStream(content);
+
+            var putArgs = new PutObjectArgs()
+                .WithBucket(_options.BucketName)
+                .WithObject(objectName)
+                .WithStreamData(stream)
+                .WithObjectSize(stream.Length)
+                .WithContentType("application/octet-stream");
+
+            await _minioClient.PutObjectAsync(putArgs);
+            return objectName;
+        }
+
+        public async Task<byte[]?> DownloadAsync(string objectName)
+        {
+            try
             {
-                Title = "Savrani Messenger API",
-                Version = "v1"
-            });
+                using var ms = new MemoryStream();
 
-            var jwtScheme = new OpenApiSecurityScheme
+                var getArgs = new GetObjectArgs()
+                    .WithBucket(_options.BucketName)
+                    .WithObject(objectName)
+                    .WithCallbackStream(s => s.CopyTo(ms));
+
+                // вот здесь была опечатка — вместо Equals нужно GetObjectAsync
+                await _minioClient.GetObjectAsync(getArgs);
+
+                return ms.ToArray();
+            }
+            catch (MinioException)
             {
-                Name = "Authorization",
-                In = ParameterLocation.Header,
-                Type = SecuritySchemeType.Http,
-                Scheme = "bearer",
-                BearerFormat = "JWT",
-                Description = "Введите JWT токен. Пример: **Bearer {токен}**"
-            };
+                return null;
+            }
+        }
 
-            opt.AddSecurityDefinition("Bearer", jwtScheme);
-            opt.AddSecurityRequirement(new OpenApiSecurityRequirement
+        public async Task DeleteAsync(string objectName)
+        {
+            var rmArgs = new RemoveObjectArgs()
+                .WithBucket(_options.BucketName)
+                .WithObject(objectName);
+
+            await _minioClient.RemoveObjectAsync(rmArgs);
+        }
+
+        public async Task<bool> ExistsAsync(string objectName)
+        {
+            try
             {
-                { jwtScheme, Array.Empty<string>() }
-            });
-        });
+                var statArgs = new StatObjectArgs()
+                    .WithBucket(_options.BucketName)
+                    .WithObject(objectName);
 
-        return services;
-    }
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
-    {
-        // Ядро (core-сервис регистрации с ключами)
-        services.AddScoped<AuthService>();
+                await _minioClient.StatObjectAsync(statArgs);
+                return true;
+            }
+            catch (MinioException)
+            {
+                return false;
+            }
+        }
 
-        // API-интерфейс — работа с JWT и возврат токена
-        services.AddScoped<IAuthService, ApiAuthService>();
+        private async Task EnsureBucketExistsAsync()
+        {
+            var existsArgs = new BucketExistsArgs()
+                .WithBucket(_options.BucketName);
 
-        // TODO: здесь потом добавим валидаторы и другие модули (UserService, ChatService и т.п.)
-
-        return services;
+            bool exists = await _minioClient.BucketExistsAsync(existsArgs);
+            if (!exists)
+            {
+                var makeArgs = new MakeBucketArgs()
+                    .WithBucket(_options.BucketName);
+                await _minioClient.MakeBucketAsync(makeArgs);
+            }
+        }
     }
 }

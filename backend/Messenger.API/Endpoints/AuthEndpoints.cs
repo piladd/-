@@ -1,9 +1,13 @@
 using Messenger.Application.Auth.DTOs;
 using Messenger.Application.Auth.Services;
 using Messenger.Application.Interfaces;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using LoginRequest = Messenger.Application.Auth.DTOs.LoginRequest;
+using RegisterRequest = Messenger.Application.Auth.DTOs.RegisterRequest;
 
 namespace Messenger.API.Endpoints;
 

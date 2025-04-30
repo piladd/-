@@ -1,12 +1,12 @@
-using Messenger.Domain.Entities;
-using Messenger.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Messenger.Domain.Entities;
+using Messenger.Persistence.DbContext;
+using Microsoft.EntityFrameworkCore;
 
-namespace Messenger.Infrastructure.Repositories;
+namespace Messenger.Persistence.Repositories;
 
 /// <summary>
 /// Репозиторий для управления чатами и сообщениями в базе данных.
@@ -46,8 +46,9 @@ public class ChatRepository
     /// <summary>
     /// Возвращает все чаты из базы данных.
     /// </summary>
+    /// <param name="userId"></param>
     /// <returns>Коллекция чатов</returns>
-    public async Task<IEnumerable<Chat>> GetAllAsync()
+    public async Task<IEnumerable<Chat>> GetAllAsync(Guid userId)
     {
         return await _dbContext.Chats.ToListAsync();
     }
@@ -73,5 +74,15 @@ public class ChatRepository
             .Where(m => m.ChatId == chatId)
             .OrderBy(m => m.SentAt)
             .ToListAsync();
+    }
+
+    public async Task AddAsync(Chat chat)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task SaveMessageAsync(Guid chatId, Message message)
+    {
+        throw new NotImplementedException();
     }
 }

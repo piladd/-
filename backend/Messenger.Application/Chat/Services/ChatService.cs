@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Messenger.Infrastructure.Repositories;
+using Messenger.Persistence.Repositories;
 
 namespace Messenger.Application.Services;
 
@@ -13,13 +14,13 @@ namespace Messenger.Application.Services;
 /// </summary>
 public class ChatService : IChatService
 {
-    private readonly IChatRepository _repo;
+    private readonly ChatRepository _repo;
 
     /// <summary>
     /// Конструктор сервиса чатов.
     /// </summary>
     /// <param name="repo">Репозиторий чатов</param>
-    public ChatService(IChatRepository repo)
+    public ChatService(ChatRepository repo)
     {
         _repo = repo;
     }
@@ -29,7 +30,7 @@ public class ChatService : IChatService
     /// </summary>
     /// <param name="userId">ID пользователя</param>
     /// <returns>Список чатов</returns>
-    public async Task<IEnumerable<Chat>> GetAllChatsAsync(Guid userId) =>
+    public async Task<IEnumerable<Domain.Entities.Chat>> GetAllChatsAsync(Guid userId) =>
         await _repo.GetAllAsync(userId);
 
     /// <summary>
@@ -37,7 +38,7 @@ public class ChatService : IChatService
     /// </summary>
     /// <param name="chatId">ID чата</param>
     /// <returns>Объект чата или null, если не найден</returns>
-    public async Task<Chat?> GetChatByIdAsync(Guid chatId) =>
+    public async Task<Domain.Entities.Chat?> GetChatByIdAsync(Guid chatId) =>
         await _repo.GetByIdAsync(chatId);
 
     /// <summary>
@@ -46,9 +47,9 @@ public class ChatService : IChatService
     /// <param name="name">Название чата</param>
     /// <param name="participantIds">Список ID участников</param>
     /// <returns>Созданный чат</returns>
-    public async Task<Chat> CreateChatAsync(string name, List<Guid> participantIds)
+    public async Task<Domain.Entities.Chat> CreateChatAsync(string name, List<Guid> participantIds)
     {
-        var chat = new Chat
+        var chat = new Domain.Entities.Chat
         {
             Id = Guid.NewGuid(),
             Title = name,

@@ -12,12 +12,13 @@ public static class UserEndpoints
     {
         var group = app.MapGroup("/api/user")
             .WithTags("User")
-            .RequireAuthorization(); // Требует JWT
+            .RequireAuthorization();
 
-        // Получить текущего пользователя (по токену)
+        // GET /api/user/me
         group.MapGet("/me", async (
-            ClaimsPrincipal user,
-            IUserService userService) =>
+                ClaimsPrincipal user,
+                [FromServices] IUserService userService)
+            =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Results.Unauthorized();
@@ -26,20 +27,22 @@ public static class UserEndpoints
             return Results.Ok(profile);
         });
 
-        // Поиск пользователей по username
+        // GET /api/user/search?username=...
         group.MapGet("/search", async (
-            [FromQuery] string username,
-            IUserService userService) =>
+                [FromQuery] string username,
+                [FromServices] IUserService userService)
+            =>
         {
             var results = await userService.SearchUsersAsync(username);
             return Results.Ok(results);
         });
 
-        // Смена имени
+        // PUT /api/user/display-name
         group.MapPut("/display-name", async (
-            ClaimsPrincipal user,
-            [FromBody] UpdateDisplayNameRequest request,
-            IUserService userService) =>
+                ClaimsPrincipal user,
+                [FromBody] UpdateDisplayNameRequest request,
+                [FromServices] IUserService userService)
+            =>
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null) return Results.Unauthorized();
@@ -47,32 +50,30 @@ public static class UserEndpoints
             await userService.UpdateDisplayNameAsync(Guid.Parse(userId), request.DisplayName);
             return Results.NoContent();
         });
-        
-        // Загрузка аватара
+
+        // POST /api/user/avatar
         group.MapPost("/avatar", async (
                 ClaimsPrincipal user,
-                IFormFile file,
-                IStorageService storageService,
-                IUserService userService) =>
-            {
-                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (userId == null) return Results.Unauthorized();
+                [FromForm] IFormFile file,
+                [FromServices] IStorageService storageService,
+                [FromServices] IUserService userService)
+            =>
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Results.Unauthorized();
+            if (file.Length == 0)
+                return Results.BadRequest("Файл не предоставлен.");
 
-                if (file == null || file.Length == 0)
-                    return Results.BadRequest("Файл не предоставлен.");
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms);
+            var content = ms.ToArray();
 
-                using var ms = new MemoryStream();
-                await file.CopyToAsync(ms);
-                var content = ms.ToArray();
+            var objectName = await storageService.UploadAsync(file.FileName, content);
+            var url = $"/api/attachments/download/{objectName}";
 
-                var objectName = await storageService.UploadAsync(file.FileName, content);
-                var url = $"/api/attachments/download/{objectName}"; // Или полная ссылка
-
-                await userService.SetAvatarUrlAsync(Guid.Parse(userId), url);
-
-                return Results.Ok(new { avatarUrl = url });
-            })
-            .WithName("UploadAvatar");
-
+            await userService.SetAvatarUrlAsync(Guid.Parse(userId), url);
+            return Results.Ok(new { avatarUrl = url });
+        })
+        .WithName("UploadAvatar");
     }
 }

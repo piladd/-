@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Messenger.Application.User.DTOs;
 using Messenger.Domain.Entities;
 using Messenger.Persistence.Repositories;

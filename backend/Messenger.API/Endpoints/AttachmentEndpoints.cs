@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
-using Messenger.Application.Common.Storage;
 using Microsoft.AspNetCore.Mvc;
+using Messenger.Application.Common.Storage;
 
 namespace Messenger.API.Endpoints;
 
@@ -11,12 +9,13 @@ public static class AttachmentEndpoints
     {
         var group = app.MapGroup("/api/attachments")
             .WithTags("Attachments")
-            .RequireAuthorization(); // Только авторизованные
+            .RequireAuthorization();
 
         // Загрузка файла
         group.MapPost("/upload", async (
-                [FromForm] IFormFile file,
-                IStorageService storageService) =>
+                    [FromForm] IFormFile file,
+                    [FromServices] IStorageService storageService)
+                =>
             {
                 if (file == null || file.Length == 0)
                     return Results.BadRequest("Файл не предоставлен.");
@@ -30,10 +29,11 @@ public static class AttachmentEndpoints
             })
             .WithName("UploadAttachment");
 
-        // Загрузка файла по ключу
+        // Скачивание файла
         group.MapGet("/download/{objectName}", async (
-                string objectName,
-                IStorageService storageService) =>
+                    string objectName,
+                    [FromServices] IStorageService storageService)
+                =>
             {
                 var content = await storageService.DownloadAsync(objectName);
                 if (content == null)
