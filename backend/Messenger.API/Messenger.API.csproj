@@ -18,7 +18,6 @@
   <ItemGroup>
     <!-- Ссылки на проекты -->
     <ProjectReference Include="..\Messenger.Application\Messenger.Application.csproj" />
-    <ProjectReference Include="..\Messenger.Infrastructure\Messenger.Infrastructure.csproj" />
     <ProjectReference Include="..\Messenger.Domain\Messenger.Domain.csproj" />
     <ProjectReference Include="..\Messenger.Persistence\Messenger.Persistence.csproj" />
     <ProjectReference Include="..\Messenger.Security\Messenger.Security.csproj" />

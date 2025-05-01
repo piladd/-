@@ -1,8 +1,7 @@
-import type { User } from './User'
+import {MessageDto} from "@/types/message";
 
-export interface Chat {
+export interface ChatDto {
     id: string
-    name: string
-    isGroup: boolean
-    participants: User[]
+    participants: string[] // [userId1, userId2]
+    lastMessage?: MessageDto
 }

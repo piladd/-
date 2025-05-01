@@ -1,17 +1,22 @@
-import axios from 'axios'
+import api from './api'
+import type {LoginRequest, RegisterRequest} from '@/types/auth'
 
-const API = 'http://localhost:5000/api/auth'
-
-export async function login(username: string, password: string) {
-    const response = await axios.post(`${API}/login`, { username, password })
-    return response.data // { token, user }
+export const login = async (data: LoginRequest): Promise<string | null> => {
+    try {
+        const response = await api.post('/api/auth/login', data)
+        return response.data.token // ожидается, что backend возвращает токен
+    } catch (error) {
+        console.error('Ошибка при входе:', error)
+        return null
+    }
 }
 
-export async function register(username: string, password: string) {
-    const response = await axios.post(`${API}/register`, { username, password })
-    return response.data
-}
-
-export async function logout() {
-    await axios.post(`${API}/logout`)
+export const register = async (data: RegisterRequest): Promise<string | null> => {
+    try {
+        const response = await api.post('/api/auth/register', data)
+        return response.data.token
+    } catch (error) {
+        console.error('Ошибка при регистрации:', error)
+        return null
+    }
 }

@@ -1,32 +1,35 @@
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import axios from 'axios'
+import {defineStore} from 'pinia'
+import {useMessageStore} from './message'
 
-export interface Chat {
-    id: string
-    name: string
-    participants: string[]
-}
+export const useChatStore = defineStore('chat', {
+    state: () => ({
+        currentRecipientId: null as string | null
+    }),
 
-export const useChatStore = defineStore('chat', () => {
-    const chats = ref<Chat[]>([])
-    const activeChatId = ref<string | null>(null)
+    getters: {
+        /// <summary>Проверка: выбран ли собеседник</summary>
+        isChatSelected: (state) => !!state.currentRecipientId
+    },
 
-    async function fetchChats() {
-        const res = await axios.get('/api/chats')
-        chats.value = res.data
+    actions: {
+        /// <summary>Устанавливает текущего собеседника и загружает историю сообщений</summary>
+        /// <param name="id">ID пользователя</param>
+        async setCurrentRecipient(id: string) {
+            this.currentRecipientId = id
+
+            const messageStore = useMessageStore()
+            await messageStore.loadMessages(id)
+        },
+
+        /// <summary>Сбрасывает активного получателя</summary>
+        clearChat() {
+            this.currentRecipientId = null
+        },
+
+        /// <summary>Проверяет, открыт ли чат с указанным ID</summary>
+        /// <param name="id">ID пользователя</param>
+        isActive(id: string): boolean {
+            return this.currentRecipientId === id
+        }
     }
-
-    function selectChat(id: string) {
-        activeChatId.value = id
-    }
-
-    function getReceiverId(chatId: string): string | null {
-        const chat = chats.value.find(c => c.id === chatId)
-        const currentUserId = localStorage.getItem('userId')
-        if (!chat || !currentUserId) return null
-        return chat.participants.find(id => id !== currentUserId) || null
-    }
-
-    return { chats, activeChatId, fetchChats, selectChat, getReceiverId }
 })

@@ -1,8 +1,17 @@
-export interface Message {
+export interface MessageDto {
     id: string
-    chatId: string
     senderId: string
-    text: string
-    timestamp: string
-    isMine: boolean
+    senderName: string
+    senderAvatar: string | null
+    encryptedContent: string | null
+    encryptedAesKey: string | null
+    iv: string | null
+    createdAt: string
+    decryptedContent?: string | null
+}
+
+export interface SendMessageRequest {
+    encryptedContent: string
+    encryptedAesKey: string
+    iv: string
 }

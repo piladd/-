@@ -1,56 +1,86 @@
-// 📁 store/message.ts
-import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
-import { useChatStore } from './chat'
-import { getMessages as apiGetMessages } from '@/services/chat.service'
-import { KeyManagerService } from '@/services/key-manager.service'
-import { hybridDecrypt } from '@/services/crypto.service'
-import { sendMessage as sendEncryptedMessage } from '@/services/websocket'
-import type { Message } from '@/types/Message'
+import {defineStore} from 'pinia'
+import type {MessageDto} from '@/types/message'
+import {getMessages, sendMessage} from '@/services/chat.service'
+import {uploadAttachment} from '@/services/attachment.service'
+import {encryptForRecipient, decryptMessageContent} from '@/utils/crypto'
 
-export const useMessageStore = defineStore('message', () => {
-    const messages = ref<Message[]>([]) // ✅ определено
-    const chatStore = useChatStore()
+export const useMessageStore = defineStore('message', {
+    state: () => ({
+        messages: [] as MessageDto[],
+        isLoading: false,
+        error: null as string | null
+    }),
 
-    async function fetchMessages(chatId: string): Promise<void> {
-        const res = await apiGetMessages(chatId)
-        messages.value = res // ✅ корректно, res: Message[]
-    }
+    actions: {
+        /// <summary>Загружает сообщения для выбранного собеседника</summary>
+        /// <param name="recipientId">ID получателя</param>
+        async loadMessages(recipientId: string) {
+            this.isLoading = true
+            this.error = null
+            try {
+                const raw = await getMessages(recipientId)
 
-    async function sendMessage(text: string) {
-        const chatId = chatStore.activeChatId
-        const receiverId = chatStore.getReceiverId(chatId!)
-        if (!chatId || !receiverId) return
-        await sendEncryptedMessage(text, chatId, receiverId)
-    }
+                this.messages = await Promise.all(
+                    raw.map(async (msg) => ({
+                        ...msg,
+                        decryptedContent: await this.tryDecrypt(msg)
+                    }))
+                )
+            } catch (err: any) {
+                this.error = 'Не удалось загрузить сообщения'
+                console.error(err)
+            } finally {
+                this.isLoading = false
+            }
+        },
 
-    async function receiveMessage(msg: any) {
-        const { encryptedKey, encryptedData, iv } = msg
+        /// <summary>Отправляет зашифрованное текстовое сообщение</summary>
+        /// <param name="recipientId">ID получателя</param>
+        /// <param name="text">Открытый текст</param>
+        async sendEncryptedMessage(recipientId: string, text: string) {
+            try {
+                const payload = await encryptForRecipient(recipientId, text)
+                const sent = await sendMessage(recipientId, payload)
 
-        if (encryptedKey && encryptedData && iv) {
-            const privateKey = await KeyManagerService.ensurePrivateKey()
-            const decryptedText = await hybridDecrypt({ encryptedKey, encryptedData, iv }, privateKey)
+                this.messages.push({
+                    ...sent,
+                    decryptedContent: text
+                })
+            } catch (err) {
+                console.error('Ошибка при отправке сообщения:', err)
+            }
+        },
 
-            messages.value.push({
-                id: msg.id,
-                chatId: msg.chatId,
-                senderId: msg.senderId,
-                text: decryptedText,
-                timestamp: msg.timestamp,
-                isMine: msg.senderId === localStorage.getItem('userId'),
+        /// <summary>Отправляет зашифрованный файл как вложение</summary>
+        /// <param name="recipientId">ID получателя</param>
+        /// <param name="file">Файл</param>
+        async sendEncryptedAttachment(recipientId: string, file: File) {
+            try {
+                await uploadAttachment(file)
+                // Можно расширить: создать сообщение о загрузке
+            } catch (err) {
+                console.error('Ошибка загрузки вложения:', err)
+            }
+        },
+
+        /// <summary>Пытается расшифровать содержимое сообщения</summary>
+        /// <param name="msg">Сообщение</param>
+        async tryDecrypt(msg: MessageDto): Promise<string> {
+            try {
+                return await decryptMessageContent(msg)
+            } catch {
+                return '[Ошибка расшифровки]'
+            }
+        },
+
+        /// <summary>Добавляет входящее сообщение из WebSocket в стор</summary>
+        /// <param name="msg">MessageDto из WS</param>
+        async pushFromSocket(msg: MessageDto) {
+            const decrypted = await this.tryDecrypt(msg)
+            this.messages.push({
+                ...msg,
+                decryptedContent: decrypted
             })
-        } else {
-            messages.value.push(msg)
         }
     }
-
-    watch(
-        () => chatStore.activeChatId,
-        (chatId) => {
-            if (chatId) fetchMessages(chatId)
-        },
-        { immediate: true }
-    )
-
-    return { messages, fetchMessages, receiveMessage, sendMessage }
 })
