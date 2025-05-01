@@ -1,11 +1,8 @@
-using System;
+using System.Security.Claims;
 using Messenger.Application.Chat.DTOs;
 using Messenger.Application.Chat.Services;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
+using Messenger.Domain.Entities;
 
 namespace Messenger.API.Endpoints;
 
@@ -41,6 +38,39 @@ public static class ChatEndpoints
 
             var messages = await messageService.GetChatHistoryAsync(Guid.Parse(senderId), recipientId);
             return Results.Ok(messages);
+        });
+    }
+
+    public static void MapMessageEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/api/messages")
+            .WithTags("Messages")
+            .RequireAuthorization();
+
+        // Статус Delivered
+        group.MapPost("/delivered/{messageId:guid}", async (
+            Guid messageId,
+            [FromServices] IMessageService messageService,
+            ClaimsPrincipal user) =>
+        {
+            var userIdStr = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userIdStr is null) return Results.Unauthorized();
+
+            await messageService.UpdateMessageStatusAsync(messageId, MessageStatus.Delivered);
+            return Results.Ok();
+        });
+
+        // Статус Read
+        group.MapPost("/read/{messageId:guid}", async (
+            Guid messageId,
+            [FromServices] IMessageService messageService,
+            ClaimsPrincipal user) =>
+        {
+            var userIdStr = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userIdStr is null) return Results.Unauthorized();
+
+            await messageService.UpdateMessageStatusAsync(messageId, MessageStatus.Read);
+            return Results.Ok();
         });
     }
 }

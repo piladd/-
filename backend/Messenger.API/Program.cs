@@ -1,24 +1,22 @@
-using System;
 using Minio;
 using Microsoft.Extensions.Options;
 using Messenger.Application.Common.Storage;
 using System.Text;
 using Messenger.API.Endpoints;
-using Messenger.API.Extensions;
+using Messenger.Application.Attachment.Interfaces;
+using Messenger.Application.Attachment.Services;
 using Messenger.Application.Auth.Services;
 using Messenger.Application.Chat.Services;
 using Messenger.Application.Interfaces;
-using Messenger.Application.Services;
 using Messenger.Application.User.Services;
-using Messenger.Infrastructure.Repositories;
-using Messenger.Infrastructure.Storage;
 using Messenger.Persistence.DbContext;
 using Messenger.Persistence.Repositories;
 using Messenger.Security;
+using Messenger.Security.Encryption;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Minio;
+using AttachmentRepository = Messenger.Persistence.Repositories.AttachmentRepository;
 using MinioStorageService = Messenger.Application.Common.Storage.MinioStorageService;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,6 +34,7 @@ builder.Services.AddDbContext<MessengerDbContext>(opts =>
 
 // 3. EncryptionService (из проекта Messenger.Security)
 builder.Services.AddSingleton<EncryptionService>();
+builder.Services.AddScoped<IStorageService, MinioStorageService>();
 
 // 4. Репозитории (Messenger.Persistence)
 builder.Services.AddScoped<AttachmentRepository>();
@@ -61,7 +60,7 @@ builder.Services.AddSingleton<MinioClient>(sp =>
     return (new MinioClient()
         .WithEndpoint(opts.Endpoint)
         .WithCredentials(opts.AccessKey, opts.SecretKey)
-        .WithSSL(opts.UseSSL) as MinioClient)!;
+        .WithSSL(opts.UseSsl) as MinioClient)!;
 });
 
 // 7. Swagger / OpenAPI
@@ -134,5 +133,7 @@ app.MapAttachmentEndpoints();
 app.MapUserEndpoints();
 app.MapChatEndpoints();
 app.MapAuthEndpoints();
+app.MapKeyExchangeEndpoints();
+app.MapMessageEndpoints();
 
 app.Run();

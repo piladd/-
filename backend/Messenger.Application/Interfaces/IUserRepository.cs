@@ -1,8 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Messenger.Domain.Entities;
-
 namespace Messenger.Application.Interfaces;
 
 public interface IUserRepository

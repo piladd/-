@@ -1,95 +1,65 @@
-using System;
-using System.Threading.Tasks;
-using Messenger.Application.Interfaces;
-using Messenger.Security;
-using Messenger.Infrastructure.Repositories;
+using Messenger.Application.Attachment.Interfaces;
+using Messenger.Application.Common.Storage;
+using Messenger.Persistence.Repositories;
 
-namespace Messenger.Application.Services;
+namespace Messenger.Application.Attachment.Services;
 
 /// <summary>
-/// Сервис для загрузки и скачивания зашифрованных вложений.
+/// Сервис для приёма и сохранения зашифрованных вложений (E2EE).
 /// </summary>
 public class AttachmentService : IAttachmentService
 {
     private readonly AttachmentRepository _attachmentRepository;
-    private readonly EncryptionService _encryptionService;
+    private readonly IStorageService _storageService;
 
     /// <summary>
     /// Конструктор сервиса вложений.
     /// </summary>
-    /// <param name="attachmentRepository">Репозиторий вложений</param>
-    /// <param name="encryptionService">Сервис шифрования</param>
-    public AttachmentService(AttachmentRepository attachmentRepository, EncryptionService encryptionService)
+    public AttachmentService(AttachmentRepository attachmentRepository, IStorageService storageService)
     {
         _attachmentRepository = attachmentRepository;
-        _encryptionService = encryptionService;
+        _storageService = storageService;
     }
 
     /// <summary>
-    /// Загружает файл, шифрует его и сохраняет в базу данных.
+    /// Сохраняет зашифрованное вложение (без расшифровки на сервере).
     /// </summary>
-    /// <param name="fileName">Имя файла</param>
-    /// <param name="fileData">Массив байт содержимого файла</param>
-    /// <returns>ID созданного вложения</returns>
-    public async Task<int> UploadAttachmentAsync(string fileName, byte[] fileData)
+    public async Task<string> UploadEncryptedAttachmentAsync(string fileName, byte[] encryptedData, string encryptedAesKey, string iv, Guid uploaderId)
     {
-        if (string.IsNullOrWhiteSpace(fileName))
-            throw new ArgumentException("Имя файла обязательно.", nameof(fileName));
+        var objectName = await _storageService.UploadAsync(fileName, encryptedData);
 
-        try
+        var attachment = new Domain.Entities.Attachment
         {
-            // Генерируем симметричный ключ для шифрования
-            var symKey = _encryptionService.GenerateSymmetricKey();
+            Id = Guid.NewGuid(),
+            UploaderId = uploaderId,
+            ObjectName = objectName,
+            FileName = fileName,
+            EncryptedAesKey = encryptedAesKey,
+            Iv = iv,
+            UploadedAt = DateTime.UtcNow
+        };
 
-            // Преобразуем байты файла в строку Base64 (для примера)
-            var fileDataBase64 = Convert.ToBase64String(fileData);
-
-            // Шифруем данные с помощью AES
-            var (iv, cipherBytes) = _encryptionService.EncryptWithAes(fileDataBase64, symKey);
-
-            // Сохраняем вложение в базу
-            var attachment = new Domain.Entities.Attachment
-            {
-                FileName = fileName,
-                EncryptedData = cipherBytes,
-                SymmetricKey = Convert.ToBase64String(symKey),
-                IV = Convert.ToBase64String(iv),
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _attachmentRepository.AddAttachmentAsync(attachment);
-            return attachment.Id;
-        }
-        catch (Exception ex)
-        {
-            throw new ApplicationException("Ошибка при загрузке вложения.", ex);
-        }
+        await _attachmentRepository.AddAttachmentAsync(attachment);
+        return objectName;
     }
 
     /// <summary>
-    /// Получает и расшифровывает вложение по его ID.
+    /// Возвращает зашифрованный файл по objectName.
     /// </summary>
-    /// <param name="attachmentId">ID вложения</param>
-    /// <returns>Расшифрованный файл в виде массива байт или null, если не найден</returns>
-    public async Task<byte[]?> DownloadAttachmentAsync(int attachmentId)
+    public async Task<byte[]?> DownloadEncryptedAttachmentAsync(string objectName)
     {
-        try
-        {
-            var attachment = await _attachmentRepository.GetAttachmentByIdAsync(attachmentId);
-            if (attachment == null)
-                return null;
+        return await _storageService.DownloadAsync(objectName);
+    }
 
-            var symKey = Convert.FromBase64String(attachment.SymmetricKey);
-            var decryptedString = _encryptionService.DecryptWithAes(
-                attachment.EncryptedData,
-                symKey,
-                Convert.FromBase64String(attachment.IV));
+    /// <summary>
+    /// Получает метаинформацию о вложении по objectName (ключ + IV).
+    /// </summary>
+    public async Task<(string EncryptedAesKey, string Iv)> GetAttachmentMetaAsync(string objectName)
+    {
+        var meta = await _attachmentRepository.GetMetaAsync(objectName);
+        if (meta == null)
+            throw new KeyNotFoundException($"Attachment '{objectName}' not found.");
 
-            return Convert.FromBase64String(decryptedString);
-        }
-        catch (Exception ex)
-        {
-            throw new ApplicationException("Ошибка при скачивании вложения.", ex);
-        }
+        return meta.Value;
     }
 }

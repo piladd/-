@@ -1,13 +1,7 @@
-using Messenger.Application.Interfaces;
 using Messenger.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Messenger.Infrastructure.Repositories;
 using Messenger.Persistence.Repositories;
 
-namespace Messenger.Application.Services;
+namespace Messenger.Application.Chat.Services;
 
 /// <summary>
 /// Сервис для управления чатами и отправки сообщений.

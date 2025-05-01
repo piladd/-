@@ -1,9 +1,6 @@
 using Messenger.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
-namespace Messenger.Application.Interfaces;
+namespace Messenger.Application.Chat.Services;
 
 /// <summary>
 /// Интерфейс сервиса для работы с чатами и сообщениями.

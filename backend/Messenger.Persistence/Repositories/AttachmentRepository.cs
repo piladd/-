@@ -1,9 +1,8 @@
 using Messenger.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 using Messenger.Persistence.DbContext;
+using Microsoft.EntityFrameworkCore;
 
-namespace Messenger.Infrastructure.Repositories;
+namespace Messenger.Persistence.Repositories;
 
 /// <summary>
 /// Репозиторий для работы с вложениями (файлами) в базе данных.
@@ -40,4 +39,23 @@ public class AttachmentRepository
     {
         return await _dbContext.Attachments.FindAsync(id);
     }
+
+    /// <summary>
+    /// Получает вложение по objectName (уникальному имени объекта в хранилище).
+    /// </summary>
+    public async Task<Attachment?> GetAttachmentByObjectNameAsync(string objectName)
+    {
+        return await _dbContext.Attachments.FirstOrDefaultAsync(x => x.ObjectName == objectName);
+    }
+    
+    public async Task<(string EncryptedAesKey, string Iv)?> GetMetaAsync(string objectName)
+    {
+        var result = await _dbContext.Attachments
+            .Where(a => a.ObjectName == objectName)
+            .Select(a => new { a.EncryptedAesKey, a.Iv })
+            .FirstOrDefaultAsync();
+
+        return result == null ? null : (result.EncryptedAesKey, result.Iv);
+    }
+
 }

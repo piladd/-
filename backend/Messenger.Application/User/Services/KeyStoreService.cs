@@ -1,12 +1,8 @@
-using System.Threading.Tasks;
-using Messenger.Infrastructure;
-using Messenger.Application.Interfaces;
 using Messenger.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
 using Messenger.Persistence.DbContext;
 
-namespace Messenger.Application.Services;
+namespace Messenger.Application.User.Services;
 
 /// <summary>
 /// Сервис для сохранения и получения публичных ключей пользователей.
@@ -58,5 +54,19 @@ public class KeyStoreService : IKeyStoreService
     public async Task<PublicKey?> GetPublicKeyAsync(Guid userId)
     {
         return await _db.PublicKeys.FirstOrDefaultAsync(k => k.UserId == userId);
+    }
+
+    /// <summary>
+    /// Удаляет публичный ключ пользователя.
+    /// </summary>
+    /// <param name="userId">ID пользователя</param>
+    public async Task DeletePublicKeyAsync(Guid userId)
+    {
+        var existing = await _db.PublicKeys.FirstOrDefaultAsync(k => k.UserId == userId);
+        if (existing != null)
+        {
+            _db.PublicKeys.Remove(existing);
+            await _db.SaveChangesAsync();
+        }
     }
 }

@@ -1,8 +1,6 @@
-using System;
-using System.Threading.Tasks;
 using Messenger.Domain.Entities;
 
-namespace Messenger.Application.Interfaces;
+namespace Messenger.Application.User.Services;
 
 /// <summary>
 /// Интерфейс сервиса для хранения и получения публичных ключей пользователей.
@@ -22,4 +20,6 @@ public interface IKeyStoreService
     /// <param name="userId">ID пользователя</param>
     /// <returns>Объект публичного ключа или null, если не найден</returns>
     Task<PublicKey?> GetPublicKeyAsync(Guid userId);
+    Task DeletePublicKeyAsync(Guid userId); // для удаления
+
 }

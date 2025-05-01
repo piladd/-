@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Messenger.Infrastructure.Storage;
 using Microsoft.Extensions.Options;
 using Minio;
 using Minio.DataModel.Args;

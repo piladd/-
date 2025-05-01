@@ -1,4 +1,4 @@
-namespace Messenger.Infrastructure.Storage;
+namespace Messenger.Application.Common.Storage;
 
 /// <summary>
 /// Настройки подключения к MinIO (или S3-совместимому хранилищу).
@@ -8,6 +8,6 @@ public class MinioOptions
     public string Endpoint { get; set; } = default!;
     public string AccessKey { get; set; } = default!;
     public string SecretKey { get; set; } = default!;
-    public bool   UseSSL     { get; set; }
+    public bool   UseSsl     { get; set; }
     public string BucketName { get; set; } = "attachments";
 }

@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="TestData\" />
     <Folder Include="Unit\" />
   </ItemGroup>
 

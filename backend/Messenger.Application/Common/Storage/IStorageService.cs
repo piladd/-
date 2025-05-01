@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace Messenger.Application.Common.Storage;
 
 /// <summary>

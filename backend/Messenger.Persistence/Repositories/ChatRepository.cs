@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Messenger.Domain.Entities;
 using Messenger.Persistence.DbContext;
 using Microsoft.EntityFrameworkCore;
@@ -76,13 +72,33 @@ public class ChatRepository
             .ToListAsync();
     }
 
-    public async Task AddAsync(Chat chat)
+    /// <summary>
+    /// Не используется, заглушка.
+    /// </summary>
+    public Task AddAsync(Chat chat)
     {
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Сохраняет сообщение в базу.
+    /// </summary>
     public async Task SaveMessageAsync(Guid chatId, Message message)
     {
-        throw new NotImplementedException();
+        message.ChatId = chatId;
+        _dbContext.Messages.Add(message);
+        await _dbContext.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Получает все сообщения между двумя пользователями.
+    /// </summary>
+    public async Task<List<Message>> GetMessagesBetweenUsersAsync(Guid senderId, Guid receiverId)
+    {
+        return await _dbContext.Messages
+            .Where(m => (m.SenderId == senderId && m.ReceiverId == receiverId)
+                     || (m.SenderId == receiverId && m.ReceiverId == senderId))
+            .OrderBy(m => m.SentAt)
+            .ToListAsync();
     }
 }

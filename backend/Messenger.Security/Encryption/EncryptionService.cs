@@ -1,8 +1,7 @@
-using System;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Messenger.Security;
+namespace Messenger.Security.Encryption;
 
 /// <summary>
 /// Сервис для симметричного и асимметричного шифрования данных (AES и RSA).

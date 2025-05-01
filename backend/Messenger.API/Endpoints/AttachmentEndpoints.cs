@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Messenger.Application.Common.Storage;
+using Messenger.Application.Attachment.Interfaces;
+using System.Security.Claims;
 
 namespace Messenger.API.Endpoints;
 
@@ -11,36 +12,64 @@ public static class AttachmentEndpoints
             .WithTags("Attachments")
             .RequireAuthorization();
 
-        // Загрузка файла
+        // Загрузка зашифрованного файла с сохранением метаданных
         group.MapPost("/upload", async (
+                    ClaimsPrincipal user,
                     [FromForm] IFormFile file,
-                    [FromServices] IStorageService storageService)
+                    [FromForm] string encryptedAesKey,
+                    [FromForm] string iv,
+                    [FromServices] IAttachmentService attachmentService)
                 =>
+        {
+            if (file.Length == 0)
+                return Results.BadRequest("Файл не предоставлен.");
+
+            var userIdStr = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userIdStr is null)
+                return Results.Unauthorized();
+
+            var uploaderId = Guid.Parse(userIdStr);
+
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms);
+            var content = ms.ToArray();
+
+            var objectName = await attachmentService.UploadEncryptedAttachmentAsync(
+                file.FileName, content, encryptedAesKey, iv, uploaderId);
+
+            return Results.Ok(new
             {
-                if (file == null || file.Length == 0)
-                    return Results.BadRequest("Файл не предоставлен.");
+                objectName,
+                encryptedAesKey,
+                iv
+            });
+        });
 
-                using var ms = new MemoryStream();
-                await file.CopyToAsync(ms);
-                var content = ms.ToArray();
-
-                var objectName = await storageService.UploadAsync(file.FileName, content);
-                return Results.Ok(new { objectName });
-            })
-            .WithName("UploadAttachment");
-
-        // Скачивание файла
+        // Скачивание файла по objectName
         group.MapGet("/download/{objectName}", async (
                     string objectName,
-                    [FromServices] IStorageService storageService)
+                    [FromServices] IAttachmentService attachmentService)
                 =>
-            {
-                var content = await storageService.DownloadAsync(objectName);
-                if (content == null)
-                    return Results.NotFound();
+        {
+            var content = await attachmentService.DownloadEncryptedAttachmentAsync(objectName);
+            if (content == null)
+                return Results.NotFound();
 
-                return Results.File(content, "application/octet-stream", objectName);
-            })
-            .WithName("DownloadAttachment");
+            return Results.File(content, "application/octet-stream", objectName);
+        });
+
+        // Получение метаданных (ключ + IV) по objectName
+        group.MapGet("/meta/{objectName}", async (
+                    string objectName,
+                    [FromServices] IAttachmentService attachmentService)
+                =>
+        {
+            var meta = await attachmentService.GetAttachmentMetaAsync(objectName);
+            return Results.Ok(new
+            {
+                encryptedAesKey = meta.EncryptedAesKey,
+                iv = meta.Iv
+            });
+        });
     }
 }

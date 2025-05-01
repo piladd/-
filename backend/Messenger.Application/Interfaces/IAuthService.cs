@@ -1,7 +1,6 @@
-using System.Threading.Tasks;
 using Messenger.Application.Auth.DTOs;
 
-namespace Messenger.Application.Auth.Services;
+namespace Messenger.Application.Interfaces;
 
 /// <summary>
 /// Сервис аутентификации.

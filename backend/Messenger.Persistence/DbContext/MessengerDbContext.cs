@@ -1,5 +1,3 @@
-using System.Net.Mail;
-using System.Security.Cryptography.X509Certificates;
 using Microsoft.EntityFrameworkCore;
 using Messenger.Domain.Entities;
 using Attachment = Messenger.Domain.Entities.Attachment;
@@ -10,10 +8,9 @@ namespace Messenger.Persistence.DbContext;
 /// <summary>
 /// Контекст базы данных мессенджера.
 /// </summary>
-public class MessengerDbContext : Microsoft.EntityFrameworkCore.DbContext
+public class MessengerDbContext(DbContextOptions<MessengerDbContext> options)
+    : Microsoft.EntityFrameworkCore.DbContext(options)
 {
-    public MessengerDbContext(DbContextOptions<MessengerDbContext> options) : base(options) { }
-
     public DbSet<User> Users { get; set; }
     public DbSet<Message> Messages { get; set; }
     public DbSet<Attachment> Attachments { get; set; }

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Builder;
+namespace Messenger.API.Extensions;
 
 public static class ApplicationBuilderExtensions
 {

@@ -1,5 +1,3 @@
-using System;
-
 namespace Messenger.Application.Auth.DTOs;
 
 /// <summary>
@@ -7,7 +5,7 @@ namespace Messenger.Application.Auth.DTOs;
 /// </summary>
 public class AuthResponse
 {
-    public string Token { get; set; } = default!;
+    public string Token { get; set; } = null!;
     public Guid UserId { get; set; }
     public string? Username { get; set; }
 }

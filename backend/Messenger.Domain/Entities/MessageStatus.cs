@@ -1,4 +1,4 @@
-namespace Messenger.Domain.Enums;
+namespace Messenger.Domain.Entities;
 
 /// <summary>
 /// Статус сообщения
