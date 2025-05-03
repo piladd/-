@@ -1,12 +1,16 @@
 const TOKEN_KEY = 'auth_token'
 
-export const saveToken = (token: string) => {
+export function saveToken(token: string) {
+    console.log('💾 saveToken got:', token, ' type=', typeof token)
     localStorage.setItem(TOKEN_KEY, token)
-}
-
-export const getToken = (): string | null => {
-    return localStorage.getItem(TOKEN_KEY)
-}
+  }
+  
+  export function getToken(): string | null {
+    const t = localStorage.getItem(TOKEN_KEY)
+    console.log('📥 getToken returns:', t, ' type=', typeof t)
+    return t
+  }
+  
 
 export const removeToken = () => {
     localStorage.removeItem(TOKEN_KEY)

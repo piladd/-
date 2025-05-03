@@ -1,22 +1,15 @@
+// frontend/src/services/auth.service.ts
 import api from './api'
-import type {LoginRequest, RegisterRequest} from '@/types/auth'
+import type { LoginRequest, RegisterRequest, AuthResponse } from '@/types/auth'
 
-export const login = async (data: LoginRequest): Promise<string | null> => {
-    try {
-        const response = await api.post('/api/auth/login', data)
-        return response.data.token // ожидается, что backend возвращает токен
-    } catch (error) {
-        console.error('Ошибка при входе:', error)
-        return null
-    }
+export async function login(data: LoginRequest): Promise<string> {
+  const { data: auth } = await api.post<AuthResponse>('/api/auth/login', data)
+  console.log('⚙ auth.service login response.data:', auth)   // ← добавь эту строку для отладки
+  return auth.token
 }
 
-export const register = async (data: RegisterRequest): Promise<string | null> => {
-    try {
-        const response = await api.post('/api/auth/register', data)
-        return response.data.token
-    } catch (error) {
-        console.error('Ошибка при регистрации:', error)
-        return null
-    }
+export async function register(data: RegisterRequest): Promise<string> {
+  const { data: auth } = await api.post<AuthResponse>('/api/auth/register', data)
+  console.log('⚙ auth.service register response.data:', auth)
+  return auth.token
 }

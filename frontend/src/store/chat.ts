@@ -30,6 +30,12 @@ export const useChatStore = defineStore('chat', {
         /// <param name="id">ID пользователя</param>
         isActive(id: string): boolean {
             return this.currentRecipientId === id
-        }
+        },
+
+        async fetchMessages(id: string) {
+            const messageStore = useMessageStore()
+            await messageStore.loadMessages(id)
+          }
+          
     }
 })
