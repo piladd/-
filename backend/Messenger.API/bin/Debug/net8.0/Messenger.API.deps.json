@@ -980,7 +980,7 @@
         },
         "runtime": {
           "Messenger.Application.dll": {
-            "assemblyVersion": "1.0.0",
+            "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
           }
         }
@@ -991,7 +991,7 @@
         },
         "runtime": {
           "Messenger.Domain.dll": {
-            "assemblyVersion": "1.0.0",
+            "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
           }
         }
@@ -1006,7 +1006,7 @@
         },
         "runtime": {
           "Messenger.Persistence.dll": {
-            "assemblyVersion": "1.0.0",
+            "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
           }
         }
@@ -1014,7 +1014,7 @@
       "Messenger.Security/1.0.0": {
         "runtime": {
           "Messenger.Security.dll": {
-            "assemblyVersion": "1.0.0",
+            "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
           }
         }

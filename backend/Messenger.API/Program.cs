@@ -21,6 +21,7 @@ using MinioStorageService = Messenger.Application.Common.Storage.MinioStorageSer
 
 var builder = WebApplication.CreateBuilder(args);
 
+// =======================
 // 1. Конфигурация из appsettings.json:
 //    • ConnectionStrings:DefaultConnection
 //    • Security:MasterKey
@@ -32,11 +33,11 @@ builder.Services.AddDbContext<MessengerDbContext>(opts =>
     opts.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// 3. EncryptionService (из проекта Messenger.Security)
+// 3. EncryptionService
 builder.Services.AddSingleton<EncryptionService>();
 builder.Services.AddScoped<IStorageService, MinioStorageService>();
 
-// 4. Репозитории (Messenger.Persistence)
+// 4. Репозитории
 builder.Services.AddScoped<AttachmentRepository>();
 builder.Services.AddScoped<ChatRepository>();
 builder.Services.AddScoped<MessageRepository>();
@@ -52,8 +53,8 @@ builder.Services.AddScoped<IKeyStoreService,  KeyStoreService>();
 
 // 6. MinIO-хранилище
 builder.Services.Configure<MinioOptions>(
-        builder.Configuration.GetSection("Minio"));
-
+    builder.Configuration.GetSection("Minio")
+);
 builder.Services.AddSingleton<MinioClient>(sp =>
 {
     var opts = sp.GetRequiredService<IOptions<MinioOptions>>().Value;
@@ -63,7 +64,20 @@ builder.Services.AddSingleton<MinioClient>(sp =>
         .WithSSL(opts.UseSsl) as MinioClient)!;
 });
 
-// 7. Swagger / OpenAPI
+// 7. CORS для фронтенда
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalDev", policy =>
+    {
+        policy
+          .WithOrigins("https://localhost:5173")   // фронтенд
+          .AllowAnyMethod()
+          .AllowAnyHeader()
+          .AllowCredentials();
+    });
+});
+
+// 8. Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -90,7 +104,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// 8. JWT-аутентификация
+// 9. JWT-аутентификация
 var jwtSecret = builder.Configuration["Jwt:Secret"]
                 ?? throw new InvalidOperationException("Jwt:Secret missing");
 builder.Services
@@ -111,29 +125,44 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 
-// 9. Controllers / Endpoints
+// 10. Controllers / Endpoints
 builder.Services.AddControllers();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Разрешаем запросы от фронтенда
+app.UseCors("AllowLocalDev");
+
+
+// сразу после Build() — без обёртки в IsDevelopment()
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Messenger API V1");
+});
+
 
 app.UseHttpsRedirection();
+app.UseRouting();
+app.UseCors("AllowLocalDev");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+// ============ Endpoint-грoуппы ============
 
-// *attach your groups here*:
+app.MapControllers();
 app.MapAttachmentEndpoints();
 app.MapUserEndpoints();
 app.MapChatEndpoints();
 app.MapAuthEndpoints();
 app.MapKeyExchangeEndpoints();
 app.MapMessageEndpoints();
+
+// Авто добавление миграций
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<MessengerDbContext>();
+    db.Database.Migrate();
+}
 
 app.Run();

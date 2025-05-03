@@ -1,23 +1,6 @@
-version: '3.8'
-services:
-  messenger-api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "5000:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=db;Database=messengerdb;Username=postgres;Password=postgres
-      - ASPNETCORE_URLS=http://+:80
-      - Jwt__Secret=${JWT_SECRET}
-      - Jwt__Issuer=MessengerApi
-      - Jwt__Audience=MessengerClients
-      - Jwt__ExpiresHours=12
-      - Security__MasterKey=${MASTER_KEY}
-    depends_on:
-      - db
+version: "3.8"
 
+services:
   db:
     image: postgres:15
     container_name: messenger-db
@@ -31,14 +14,42 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  messenger-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: messenger-api
+    depends_on:
+      - db
+    ports:
+      - "5002:80"    # HTTP
+      - "5003:443"   # HTTPS
+    env_file:
+      - ./.env
+    environment:
+      - ASPNETCORE_URLS=http://+:80;https://+:443
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
+    volumes:
+      - ./frontend/certs:/https:ro
+
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    ports:
-      - "5173:80"
+    container_name: savranimessenger-frontend
     depends_on:
       - messenger-api
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./.env
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+      - CERT_PASSWORD=${CERT_PASSWORD}
+    # монтируем локальную папку с сертификатом в контейнере
+    volumes:
+      - ./frontend/certs:/app/certs:ro
 
 volumes:
   pgdata:

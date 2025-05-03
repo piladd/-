@@ -1,21 +1,34 @@
-import {defineConfig} from 'vite'
+import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
+import fs from 'fs'
 
 export default defineConfig({
-    plugins: [vue()],
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './src')
-        }
+  plugins: [vue()],
+  resolve: {
+    alias: { '@': path.resolve(__dirname, './src') }
+  },
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    https: {
+      // Читаем PFX напрямую
+      pfx: fs.readFileSync(path.resolve(__dirname, 'certs/aspnetapp.pfx')),
+      // Пароль к нему берём из переменной окружения
+      passphrase: process.env.CERT_PASSWORD
     },
-    server: {
-        proxy: {
-            '/api': 'http://localhost:5000',
-            '/hub': {
-                target: 'ws://localhost:5000',
-                ws: true
-            }
-        }
+    proxy: {
+      '/api': {
+        target: 'https://messenger-api:443',
+        changeOrigin: true,
+        secure: false
+      },
+      '/hub': {
+        target: 'wss://messenger-api:443',
+        ws: true,
+        changeOrigin: true,
+        secure: false
+      }
     }
+  }
 })

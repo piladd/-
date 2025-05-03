@@ -1,12 +1,18 @@
-FROM node:20 AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
+# frontend/Dockerfile
+FROM node:20
 
-FROM nginx:1.25-alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+WORKDIR /app
+
+# 1. Копируем и устанавливаем зависимости
+COPY package*.json ./
+RUN npm ci
+
+# 2. Копируем исходники и сертификаты
+COPY . .
+# (в том числе папку certs)
+
+# 3. Открываем порт Vite
+EXPOSE 5173
+
+# 4. Запускаем dev-сервер
+CMD ["npm", "run", "dev"]
