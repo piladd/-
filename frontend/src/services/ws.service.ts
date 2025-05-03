@@ -1,29 +1,77 @@
-let socket: WebSocket | null = null
+// frontend/src/services/ws.service.ts
 
-export const connectToWebSocket = (userId: string) => {
-    const url = `ws://${window.location.host}/hub/chat?userId=${userId}`
-    socket = new WebSocket(url)
-
-    socket.onopen = () => {
-        console.log('✅ WebSocket подключён')
+class WsService {
+    private socket: WebSocket | null = null
+  
+    connect(userId: string): void {
+      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+      const host = window.location.host
+      const url = `${protocol}://${host}/hub/chat?userId=${userId}`
+  
+      this.socket = new WebSocket(url)
+  
+      this.socket.onopen = () => {
+        console.log('🟢 WS подключен:', url)
+      }
+  
+      this.socket.onerror = (event: Event) => {
+        console.error('❌ WS ошибка:', event)
+      }
+  
+      this.socket.onclose = (event: CloseEvent) => {
+        console.log(`🔌 WS отключен (код ${event.code}, причина: ${event.reason})`)
+      }
+  
+      this.socket.onmessage = (msgEvent: MessageEvent) => {
+        try {
+          const data = JSON.parse(msgEvent.data)
+          console.log('📨 WS сообщение:', data)
+          // TODO: передать дальше полученные данные
+        } catch {
+          console.warn('Не смог распарсить WS-сообщение:', msgEvent.data)
+        }
+      }
     }
-
-    socket.onmessage = (event) => {
-        const data = JSON.parse(event.data)
-        console.log('📨 WS Message:', data)
-
-        // Тут можно вставить push в messageStore
+  
+    send(message: any): void {
+      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+        this.socket.send(JSON.stringify(message))
+      } else {
+        console.error('WS не подключен — сообщение не отправлено:', message)
+      }
     }
-
-    socket.onerror = (err) => {
-        console.error('❌ WS ошибка:', err)
+  
+    disconnect(): void {
+      if (this.socket) {
+        this.socket.close()
+        this.socket = null
+      }
     }
-
-    socket.onclose = () => {
-        console.warn('🔌 WS отключён')
-    }
-}
-
-export const disconnectWebSocket = () => {
-    if (socket) socket.close()
-}
+  }
+  
+  const wsService = new WsService()
+  
+  /**
+   * Открыть WS-соединение
+   */
+  export function connectToWebSocket(userId: string): void {
+    wsService.connect(userId)
+  }
+  
+  /**
+   * Отправить сообщение по WS
+   */
+  export function sendWsMessage(message: any): void {
+    wsService.send(message)
+  }
+  
+  /**
+   * Закрыть WS-соединение
+   */
+  export function disconnectWebSocket(): void {
+    wsService.disconnect()
+  }
+  
+  // Если кому-то нужен сам сервис
+  export default wsService
+  

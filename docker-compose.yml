@@ -1,6 +1,7 @@
 version: "3.8"
 
 services:
+  # ———————— база ----------------
   db:
     image: postgres:15
     container_name: messenger-db
@@ -14,6 +15,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  # ———————— API (.NET) ----------------
   messenger-api:
     build:
       context: ./backend
@@ -21,18 +23,20 @@ services:
     container_name: messenger-api
     depends_on:
       - db
-    ports:
-      - "5002:80"    # HTTP
-      - "5003:443"   # HTTPS
     env_file:
       - ./.env
     environment:
-      - ASPNETCORE_URLS=http://+:80;https://+:443
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
+      ASPNETCORE_URLS: http://+:80;https://+:443
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/aspnetapp.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${CERT_PASSWORD}
+    ports:
+      - "5002:80"    # HTTP
+      - "5003:443"   # HTTPS
     volumes:
+      # ваш PFX-файл лежит в frontend/certs
       - ./frontend/certs:/https:ro
 
+  # ———————— Фронт (Vite + Vue) ----------------
   frontend:
     build:
       context: ./frontend
@@ -40,16 +44,20 @@ services:
     container_name: savranimessenger-frontend
     depends_on:
       - messenger-api
-    ports:
-      - "5173:5173"
     env_file:
       - ./.env
     environment:
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL}
-      - CERT_PASSWORD=${CERT_PASSWORD}
-    # монтируем локальную папку с сертификатом в контейнере
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      CERT_PASSWORD:        ${CERT_PASSWORD}
+    ports:
+      - "5173:5173"
     volumes:
-      - ./frontend/certs:/app/certs:ro
+      # Монтируем всю папку frontend в /app, 
+      # чтобы контейнер «видел» именно ваши файлы
+      - ./frontend:/app
+      # node_modules оставляем в контейнере, 
+      # чтобы не затирать при монтировании
+      - /app/node_modules
 
 volumes:
   pgdata:
