@@ -74,14 +74,21 @@ export async function importRsaPublicKey(keyBase64: string): Promise<CryptoKey> 
 }
 
 /**
- * Преобразование ArrayBuffer в Base64
+ * Преобразование ArrayBuffer или любого TypedArray (Uint8Array, Int8Array и т.д.) в Base64.
  */
-export function bufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
+export function bufferToBase64(input: ArrayBuffer | ArrayBufferView): string {
+    // нормализуем в Uint8Array
+    const bytes = input instanceof ArrayBuffer
+        ? new Uint8Array(input)
+        : new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
+
     let binary = '';
-    for (let b of bytes) binary += String.fromCharCode(b);
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
     return btoa(binary);
 }
+
 
 /**
  * Нормализация Base64 строки (URL-safe -> стандартный) и доп. символы '='

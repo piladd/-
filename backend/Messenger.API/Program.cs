@@ -11,7 +11,6 @@ using Messenger.Application.Interfaces;
 using Messenger.Application.User.Services;
 using Messenger.Persistence.DbContext;
 using Messenger.Persistence.Repositories;
-using Messenger.Security;
 using Messenger.Security.Encryption;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -122,33 +121,48 @@ builder.Services
             ValidAudience            = builder.Configuration["Jwt:Audience"],
             ValidateLifetime         = true
         };
+
+        opt.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                var accessToken = ctx.Request.Query["access_token"];
+                var path = ctx.HttpContext.Request.Path;
+                // если запрос идёт на наш хаб
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+                    ctx.Token = accessToken;
+                return Task.CompletedTask;
+            }
+        };
     });
 builder.Services.AddAuthorization();
 
 // 10. Controllers / Endpoints
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
-// Разрешаем запросы от фронтенда
+// === Pipeline ===
+
+app.UseHttpsRedirection();
+
+app.UseRouting();
+
+// Разрешаем CORS именно здесь — после маршрутизации и до авторизации
 app.UseCors("AllowLocalDev");
 
+app.UseAuthentication();
+app.UseAuthorization();
 
-// сразу после Build() — без обёртки в IsDevelopment()
+// Swagger/UI
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Messenger API V1");
 });
 
-
-app.UseHttpsRedirection();
-app.UseRouting();
-app.UseCors("AllowLocalDev");
-app.UseAuthentication();
-app.UseAuthorization();
-
-// ============ Endpoint-грoуппы ============
+// === Endpoint-грoуппы ===
 
 app.MapControllers();
 app.MapAttachmentEndpoints();
@@ -158,7 +172,9 @@ app.MapAuthEndpoints();
 app.MapKeyExchangeEndpoints();
 app.MapMessageEndpoints();
 
-// Авто добавление миграций
+app.MapHub<Messenger.API.Hubs.ChatHub>("/hubs/chat");
+
+// Авто-добавление миграций
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<MessengerDbContext>();

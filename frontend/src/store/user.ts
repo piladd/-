@@ -1,5 +1,5 @@
 import {defineStore} from 'pinia'
-import type {UserDto} from '@/types/user'
+import type {UserDto} from '@/types/User'
 import {searchUsers} from '@/services/user.service'
 
 export const useUserStore = defineStore('user', {
@@ -10,8 +10,7 @@ export const useUserStore = defineStore('user', {
 
     actions: {
         async fetchUsers(query: string = '') {
-            const result = await searchUsers(query)
-            this.users = result
+            this.users = await searchUsers(query)
         },
 
         setCurrentUser(user: UserDto) {

@@ -1,77 +1,84 @@
 // frontend/src/services/ws.service.ts
+import { HubConnection, HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
+import type { MessageDto } from "@/types/Message";
 
 class WsService {
-    private socket: WebSocket | null = null
-  
-    connect(userId: string): void {
-      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-      const host = window.location.host
-      const url = `${protocol}://${host}/hub/chat?userId=${userId}`
-  
-      this.socket = new WebSocket(url)
-  
-      this.socket.onopen = () => {
-        console.log('🟢 WS подключен:', url)
-      }
-  
-      this.socket.onerror = (event: Event) => {
-        console.error('❌ WS ошибка:', event)
-      }
-  
-      this.socket.onclose = (event: CloseEvent) => {
-        console.log(`🔌 WS отключен (код ${event.code}, причина: ${event.reason})`)
-      }
-  
-      this.socket.onmessage = (msgEvent: MessageEvent) => {
-        try {
-          const data = JSON.parse(msgEvent.data)
-          console.log('📨 WS сообщение:', data)
-          // TODO: передать дальше полученные данные
-        } catch {
-          console.warn('Не смог распарсить WS-сообщение:', msgEvent.data)
+    private connection: HubConnection | null = null;
+
+    /**
+     * Устанавливает SignalR-соединение.
+     * @param userId – текущий userId
+     * @param token – JWT-токен
+     */
+    async connect(userId: string, token: string): Promise<void> {
+        if (this.connection) return; // уже подключены
+
+        this.connection = new HubConnectionBuilder()
+            .withUrl(`${import.meta.env.VITE_API_URL}/hubs/chat`, {
+                accessTokenFactory: () => token
+            })
+            .withAutomaticReconnect()
+            .configureLogging(LogLevel.Warning)
+            .build();
+
+        this.connection.onreconnecting(err => {
+            console.warn("SignalR reconnecting:", err);
+        });
+        this.connection.onreconnected(cid => {
+            console.log("SignalR reconnected, id:", cid);
+        });
+        this.connection.onclose(err => {
+            console.log("SignalR closed:", err);
+            this.connection = null;
+        });
+
+        await this.connection.start();
+        console.log("🟢 SignalR connected");
+    }
+
+    /**
+     * Отправляет сообщение на сервер.
+     */
+    async send(payload: {
+        chatId: string;
+        receiverId: string;
+        encryptedContent: string;
+        encryptedAesKey: string;
+        iv: string;
+        content: string;
+        type: number;
+    }): Promise<void> {
+        if (!this.connection) throw new Error("SignalR is not connected");
+        await this.connection.invoke(
+            "SendMessage",
+            payload.chatId,
+            payload.receiverId,
+            payload.encryptedContent,
+            payload.encryptedAesKey,
+            payload.iv,
+            payload.content,
+            payload.type
+        );
+    }
+
+    /**
+     * Подписывает колбэк на все входящие сообщения.
+     */
+    onMessage(cb: (msg: MessageDto) => void): void {
+        if (!this.connection) throw new Error("SignalR is not connected");
+        this.connection.on("ReceiveMessage", cb);
+    }
+
+    /**
+     * Отключается от хаба.
+     */
+    async disconnect(): Promise<void> {
+        if (this.connection) {
+            await this.connection.stop();
+            this.connection = null;
+            console.log("🔴 SignalR disconnected");
         }
-      }
     }
-  
-    send(message: any): void {
-      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-        this.socket.send(JSON.stringify(message))
-      } else {
-        console.error('WS не подключен — сообщение не отправлено:', message)
-      }
-    }
-  
-    disconnect(): void {
-      if (this.socket) {
-        this.socket.close()
-        this.socket = null
-      }
-    }
-  }
-  
-  const wsService = new WsService()
-  
-  /**
-   * Открыть WS-соединение
-   */
-  export function connectToWebSocket(userId: string): void {
-    wsService.connect(userId)
-  }
-  
-  /**
-   * Отправить сообщение по WS
-   */
-  export function sendWsMessage(message: any): void {
-    wsService.send(message)
-  }
-  
-  /**
-   * Закрыть WS-соединение
-   */
-  export function disconnectWebSocket(): void {
-    wsService.disconnect()
-  }
-  
-  // Если кому-то нужен сам сервис
-  export default wsService
-  
+}
+
+export default new WsService();

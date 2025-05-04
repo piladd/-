@@ -1,5 +1,5 @@
 import api from './api'
-import type {MessageDto, SendMessageRequest} from '@/types/message'
+import type {MessageDto, SendMessageRequest} from '@/types/Message'
 
 export const getMessages = async (recipientId: string): Promise<MessageDto[]> => {
     const response = await api.get(`/api/chat/history/${recipientId}`)

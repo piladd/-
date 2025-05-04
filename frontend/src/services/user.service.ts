@@ -1,5 +1,5 @@
 import api from './api'
-import type {UserDto} from '@/types/user'
+import type {UserDto} from '@/types/User'
 
 export const fetchMe = async (): Promise<UserDto> => {
     const res = await api.get('/api/user/me')
