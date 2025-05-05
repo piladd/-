@@ -6,7 +6,7 @@ import {
     encryptMessageWithAes,
     importRsaPublicKey,
     bufferToBase64
-} from '@/utils/crypto.helpers'
+} from '@/utils/crypto'
 import {getPublicKeyPem} from './user.service' // должен быть реализован
 
 

@@ -1,4 +1,4 @@
-import {MessageDto} from "@/types/message";
+import {MessageDto} from "@/types/Message";
 
 export interface ChatDto {
     id: string

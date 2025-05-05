@@ -21,9 +21,14 @@ public static class ChatEndpoints
             IMessageService messageService) =>
         {
             var senderId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (senderId is null) return Results.Unauthorized();
+            if (senderId is null)
+                return Results.Unauthorized();
 
             var result = await messageService.SendMessageAsync(Guid.Parse(senderId), request);
+
+            if (result is null)
+                return Results.BadRequest("Чат с получателем не найден.");
+
             return Results.Ok(result);
         });
 

@@ -42,8 +42,6 @@ public class ChatRepository
     /// <summary>
     /// Возвращает все чаты из базы данных.
     /// </summary>
-    /// <param name="userId"></param>
-    /// <returns>Коллекция чатов</returns>
     public async Task<IEnumerable<Chat>> GetAllAsync(Guid userId)
     {
         return await _dbContext.Chats.ToListAsync();
@@ -52,8 +50,6 @@ public class ChatRepository
     /// <summary>
     /// Возвращает чат по его ID.
     /// </summary>
-    /// <param name="id">ID чата</param>
-    /// <returns>Чат или null, если не найден</returns>
     public async Task<Chat?> GetByIdAsync(Guid id)
     {
         return await _dbContext.Chats.FindAsync(id);
@@ -62,8 +58,6 @@ public class ChatRepository
     /// <summary>
     /// Возвращает все сообщения, принадлежащие указанному чату.
     /// </summary>
-    /// <param name="chatId">ID чата</param>
-    /// <returns>Коллекция сообщений, отсортированная по времени отправки</returns>
     public async Task<IEnumerable<Message>> GetMessagesByChatIdAsync(Guid chatId)
     {
         return await _dbContext.Messages
@@ -73,11 +67,12 @@ public class ChatRepository
     }
 
     /// <summary>
-    /// Не используется, заглушка.
+    /// Добавляет новый чат в базу данных.
     /// </summary>
-    public Task AddAsync(Chat chat)
+    public async Task AddAsync(Chat chat)
     {
-        throw new NotImplementedException();
+        _dbContext.Chats.Add(chat);
+        await _dbContext.SaveChangesAsync();
     }
 
     /// <summary>
@@ -100,5 +95,17 @@ public class ChatRepository
                      || (m.SenderId == receiverId && m.ReceiverId == senderId))
             .OrderBy(m => m.SentAt)
             .ToListAsync();
+    }
+
+    /// <summary>
+    /// Находит приватный чат между двумя пользователями.
+    /// </summary>
+    public async Task<Chat?> GetPrivateChatAsync(Guid userA, Guid userB)
+    {
+        return await _dbContext.Chats
+            .FirstOrDefaultAsync(c =>
+                c.ParticipantIds.Contains(userA) &&
+                c.ParticipantIds.Contains(userB) &&
+                c.ParticipantIds.Count == 2);
     }
 }

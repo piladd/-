@@ -1,4 +1,3 @@
-// frontend/src/store/message.ts
 import { defineStore } from 'pinia'
 import { getMessages, sendMessage } from '@/services/chat.service'
 import wsService from '@/services/ws.service'
@@ -13,11 +12,9 @@ export const useMessageStore = defineStore('message', {
     }),
 
     actions: {
-        /** Загружает всю историю чата по userId */
         async loadMessages(recipientId: string) {
             this.currentRecipientId = recipientId
             this.isLoading = true
-            this.error = null
             try {
                 this.messages = await getMessages(recipientId)
             } finally {
@@ -25,21 +22,19 @@ export const useMessageStore = defineStore('message', {
             }
         },
 
-        /** Подключает real-time-подписку */
-        initRealtime() {
-            wsService.onMessage((msg) => {
-                if (msg.senderId === this.currentRecipientId) {
-                    this.messages.push(msg)
-                }
-            })
-        },
-
-        /** Отправляет сообщение: сначала REST, потом WS */
         async sendEncryptedMessage(recipientId: string, data: SendMessageRequest) {
-            const saved = await sendMessage(recipientId, data) 
+            // **Проверка**
+            if (!data.encryptedContent || !data.encryptedAesKey || !data.iv) {
+                throw new Error('Encrypted message data is incomplete')
+            }
+
+            // REST
+            const saved = await sendMessage(recipientId, data)
             this.messages.push(saved)
+
+            // WS
             await wsService.send({
-                chatId: saved.id,  
+                chatId: saved.id,
                 receiverId: recipientId,
                 encryptedContent: data.encryptedContent,
                 encryptedAesKey: data.encryptedAesKey,

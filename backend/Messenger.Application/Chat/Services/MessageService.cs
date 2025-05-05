@@ -10,28 +10,57 @@ namespace Messenger.Application.Chat.Services;
 public class MessageService : IMessageService
 {
     private readonly MessageRepository _messageRepository;
+    private readonly ChatRepository _chatRepository;
 
-    /// <summary>
-    /// Конструктор сервиса сообщений.
-    /// </summary>
-    /// <param name="messageRepository">Репозиторий для работы с сущностями Message.</param>
-    public MessageService(MessageRepository messageRepository)
+    public MessageService(
+        MessageRepository messageRepository,
+        ChatRepository chatRepository)
     {
         _messageRepository = messageRepository;
+        _chatRepository = chatRepository;
     }
 
     /// <summary>
     /// Отправляет новое сообщение от одного пользователя другому.
+    /// Создаёт чат, если он ещё не существует.
     /// </summary>
-    /// <param name="senderId">ID отправителя.</param>
-    /// <param name="request">Параметры сообщения для отправки.</param>
-    /// <returns>DTO отправленного сообщения.</returns>
     public async Task<MessageDto> SendMessageAsync(Guid senderId, SendMessageRequest request)
     {
+        Guid chatId;
+
+        if (request.ChatId.HasValue && request.ChatId.Value != Guid.Empty)
+        {
+            var existing = await _chatRepository.GetByIdAsync(request.ChatId.Value);
+            if (existing is null)
+                throw new Exception("Чат с указанным ID не существует.");
+
+            chatId = existing.Id;
+        }
+        else
+        {
+            var privateChat = await _chatRepository.GetPrivateChatAsync(senderId, request.ReceiverId);
+
+            if (privateChat is null)
+            {
+                privateChat = new Domain.Entities.Chat
+                {
+                    Id = Guid.NewGuid(),
+                    Title = $"Chat_{senderId}_{request.ReceiverId}",
+                    CreatedAt = DateTime.UtcNow,
+                    ParticipantIds = [senderId, request.ReceiverId],
+                    Messages = new List<Message>()
+                };
+                await _chatRepository.AddAsync(privateChat);
+            }
+
+            chatId = privateChat.Id;
+        }
+
+        // Создаём сообщение
         var message = new Message
         {
             Id               = Guid.NewGuid(),
-            ChatId           = request.ChatId,
+            ChatId           = chatId,
             SenderId         = senderId,
             ReceiverId       = request.ReceiverId,
             EncryptedContent = request.EncryptedContent,
@@ -60,12 +89,6 @@ public class MessageService : IMessageService
         };
     }
 
-    /// <summary>
-    /// Возвращает историю переписки между двумя пользователями.
-    /// </summary>
-    /// <param name="senderId">ID первого участника переписки.</param>
-    /// <param name="receiverId">ID второго участника переписки.</param>
-    /// <returns>Список DTO сообщений, упорядоченный по времени отправки.</returns>
     public async Task<List<MessageDto>> GetChatHistoryAsync(Guid senderId, Guid receiverId)
     {
         var messages = await _messageRepository.GetMessagesBetweenUsersAsync(senderId, receiverId);
@@ -87,11 +110,6 @@ public class MessageService : IMessageService
             .ToList();
     }
 
-    /// <summary>
-    /// Обновляет статус сообщения (например, на «Доставлено» или «Прочитано»).
-    /// </summary>
-    /// <param name="messageId">ID сообщения.</param>
-    /// <param name="status">Новый статус сообщения.</param>
     public async Task UpdateMessageStatusAsync(Guid messageId, MessageStatus status)
     {
         await _messageRepository.UpdateStatusAsync(messageId, status);
