@@ -15,6 +15,21 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  # ———————— MinIO ----------------
+  minio:
+    image: minio/minio:latest               # ← заменили на официальный тег
+    container_name: messenger-minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web UI
+    volumes:
+      - miniodata:/data
+    command: server /data --console-address ":9001"
+
   # ———————— API (.NET) ----------------
   messenger-api:
     build:
@@ -23,12 +38,17 @@ services:
     container_name: messenger-api
     depends_on:
       - db
+      - minio
     env_file:
       - ./.env
     environment:
       ASPNETCORE_URLS: http://+:80;https://+:443
       ASPNETCORE_Kestrel__Certificates__Default__Path: /https/aspnetapp.pfx
       ASPNETCORE_Kestrel__Certificates__Default__Password: ${CERT_PASSWORD}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: attachments
     ports:
       - "5002:80"    # HTTP
       - "5003:443"   # HTTPS
@@ -61,3 +81,4 @@ services:
 
 volumes:
   pgdata:
+  miniodata:

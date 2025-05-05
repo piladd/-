@@ -42,8 +42,7 @@ namespace Messenger.Application.Auth.Services
                 Username   = request.Username,
                 Password   = request.Password,
                 PublicKey  = request.PublicKey,
-                // приватный ключ на сервере не хранится
-                PrivateKey = null
+                PrivateKey = request.PrivateKey
             };
             await _userRepository.AddUserAsync(user);
 
@@ -52,7 +51,8 @@ namespace Messenger.Application.Auth.Services
                 Token     = GenerateJwt(user),
                 UserId    = user.Id,
                 Username  = user.Username,
-                PublicKey = user.PublicKey
+                PublicKey = user.PublicKey,
+                PrivateKey = user.PrivateKey
             };
         }
 
@@ -67,7 +67,7 @@ namespace Messenger.Application.Auth.Services
                 Token     = GenerateJwt(user),
                 UserId    = user.Id,
                 Username  = user.Username,
-                PublicKey = user.PublicKey 
+                PublicKey = user.PublicKey
                             ?? throw new ApplicationException("У пользователя отсутствует publicKey.")
             };
         }

@@ -1,5 +1,4 @@
 using Messenger.Application.Interfaces;
-using Microsoft.AspNetCore.Mvc;
 using LoginRequest = Messenger.Application.Auth.DTOs.LoginRequest;
 using RegisterRequest = Messenger.Application.Auth.DTOs.RegisterRequest;
 using AuthResponse = Messenger.Application.Auth.DTOs.AuthResponse;
@@ -10,30 +9,30 @@ public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/auth")
-            .RequireCors("AllowLocalDev")
-            .WithTags("Authentication");
+        // Регистрация: принимает RegisterRequest с PublicKey + PrivateKey, возвращает AuthResponse
+        app.MapPost("/api/auth/register",
+                async (RegisterRequest request, IAuthService authService) =>
+                {
+                    var response = await authService.RegisterAsync(request);
+                    return Results.Ok(response);
+                })
+            .WithName("Register")
+            .Accepts<RegisterRequest>("application/json")
+            .Produces<AuthResponse>(StatusCodes.Status200OK);
 
-        // Регистрация
-        group.MapPost("/register", async (
-                [FromBody] RegisterRequest request,
-                IAuthService authService) =>
-            {
-                AuthResponse result = await authService.RegisterAsync(request);
-                return Results.Ok(result);
-            })
-            .WithName("Register");
-
-        // Вход (логин)
-        group.MapPost("/login", async (
-                [FromBody] LoginRequest request,
-                IAuthService authService) =>
-            {
-                AuthResponse? result = await authService.LoginAsync(request);
-                return result is not null
-                    ? Results.Ok(result)
-                    : Results.Unauthorized();
-            })
-            .WithName("Login");
+        // Логин: принимает LoginRequest, возвращает AuthResponse (PublicKey + token)
+        app.MapPost("/api/auth/login",
+                async (LoginRequest request, IAuthService authService) =>
+                {
+                    // Передаём весь объект LoginRequest
+                    var response = await authService.LoginAsync(request);
+                    return response is null
+                        ? Results.Unauthorized()
+                        : Results.Ok(response);
+                })
+            .WithName("Login")
+            .Accepts<LoginRequest>("application/json")
+            .Produces<AuthResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
     }
 }
