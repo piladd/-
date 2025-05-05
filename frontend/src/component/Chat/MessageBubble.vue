@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import type {MessageDto} from '@/types/message'
+import type {MessageDto} from '@/types/Message'
 import defaultAvatar from '@/assets/default-avatar.png'
 import {formatTime} from '@/utils/date'
 

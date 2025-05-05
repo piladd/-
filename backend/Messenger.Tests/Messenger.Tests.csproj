@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <Folder Include="TestData\" />
+    <Folder Include="Unit\MessageServiceTest\" />
   </ItemGroup>
 
 </Project>

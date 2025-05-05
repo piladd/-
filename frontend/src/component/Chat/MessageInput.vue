@@ -9,7 +9,7 @@
 
     <label class="upload-btn">
       📎
-      <input type="file" hidden @change="handleFileChange"/>
+      <input type="file" hidden @change="handleFileChange" />
     </label>
 
     <button type="submit" :disabled="!message.trim()">➡</button>
@@ -17,22 +17,53 @@
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue'
-import {useMessageStore} from '@/store/message'
-import {useChatStore} from '@/store/chat'
+import { ref } from 'vue'
+import { useMessageStore } from '@/store/message'
+import { useChatStore } from '@/store/chat'
+import { encryptForRecipient } from '@/utils/crypto'
 
 const message = ref('')
 const messageStore = useMessageStore()
-const chatStore = useChatStore()
+const chatStore    = useChatStore()
 
+/**
+ * При отправке:
+ * 1) шифруем текст для получателя
+ * 2) POST → /api/chat/send
+ * 3) пушим локально и отправляем по WS
+ */
 const handleSend = async () => {
-  const text = message.value.trim()
-  if (!text || !chatStore.currentRecipientId) return
+  const text        = message.value.trim()
+  const recipientId = chatStore.currentRecipientId
+  if (!text || !recipientId) return
 
-  await messageStore.sendEncryptedMessage(chatStore.currentRecipientId, text)
-  message.value = ''
+  try {
+    // шифруем
+    const encrypted = await encryptForRecipient(recipientId, text)
+
+    // отправляем на REST
+    await messageStore.sendEncryptedMessage(recipientId, {
+      ...encrypted,
+      content: text,
+      type: 0
+    })
+
+    // очищаем поле
+    message.value = ''
+  } catch (e: any) {
+    // если у получателя нет ключа на сервере → 404
+    if (e.response?.status === 404 || e.code === 404) {
+      alert('❌ У получателя нет публичного ключа. Нельзя зашифровать сообщение.')
+    } else {
+      console.error('Ошибка при шифровании/отправке:', e)
+      alert('❌ Не удалось отправить сообщение.')
+    }
+  }
 }
 
+/**
+ * Файловые вложения шифруются в другой функции
+ */
 const handleFileChange = (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (file && chatStore.currentRecipientId) {
@@ -81,7 +112,12 @@ button {
   transition: background 0.3s;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   background: #2788e6;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 </style>

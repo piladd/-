@@ -37,24 +37,22 @@ namespace Messenger.Application.Auth.Services
             if (await _userRepository.GetByUsernameAsync(request.Username) is not null)
                 throw new ApplicationException("Пользователь с таким именем уже существует.");
 
-            var (pubBytes, privBytes) = _encryptionService.GenerateAsymmetricKeys();
-            var publicKey = Convert.ToBase64String(pubBytes);
-            var encryptedPrivateKey = _encryptionService.EncryptPrivateKey(privBytes, _masterKey);
-
             var user = new Domain.Entities.User
             {
-                Username = request.Username,
-                Password = request.Password,
-                PublicKey = publicKey,
-                PrivateKey = encryptedPrivateKey
+                Username   = request.Username,
+                Password   = request.Password,
+                PublicKey  = request.PublicKey,
+                // приватный ключ на сервере не хранится
+                PrivateKey = null
             };
             await _userRepository.AddUserAsync(user);
 
             return new AuthResponse
             {
-                Token = GenerateJwt(user),
-                UserId = user.Id,
-                Username = user.Username
+                Token     = GenerateJwt(user),
+                UserId    = user.Id,
+                Username  = user.Username,
+                PublicKey = user.PublicKey
             };
         }
 
@@ -66,9 +64,11 @@ namespace Messenger.Application.Auth.Services
 
             return new AuthResponse
             {
-                Token = GenerateJwt(user),
-                UserId = user.Id,
-                Username = user.Username
+                Token     = GenerateJwt(user),
+                UserId    = user.Id,
+                Username  = user.Username,
+                PublicKey = user.PublicKey 
+                            ?? throw new ApplicationException("У пользователя отсутствует publicKey.")
             };
         }
 

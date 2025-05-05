@@ -71,7 +71,7 @@ public class ChatService : IChatService
             ChatId = chatId,
             SenderId = senderId,
             Content = content,
-            Timestamp = DateTime.UtcNow
+            SentAt = DateTime.UtcNow
         };
 
         await _repo.SaveMessageAsync(chatId, message);

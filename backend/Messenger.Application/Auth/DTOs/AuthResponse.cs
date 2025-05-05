@@ -8,4 +8,9 @@ public class AuthResponse
     public string Token { get; set; } = null!;
     public Guid UserId { get; set; }
     public string? Username { get; set; }
+    
+    /// <summary>
+    /// Публичный ключ пользователя (SPKI, Base64)
+    /// </summary>
+    public string PublicKey { get; set; } = null!;
 }
