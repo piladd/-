@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Messenger.Infrastructure.Migrations
+namespace Messenger.Persistence.Migrations
 {
     [DbContext(typeof(MessengerDbContext))]
     partial class MessengerDbContextModelSnapshot : ModelSnapshot
@@ -53,7 +53,7 @@ namespace Messenger.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Attachments");
+                    b.ToTable("Attachments", (string)null);
                 });
 
             modelBuilder.Entity("Messenger.Domain.Entities.Chat", b =>
@@ -81,7 +81,7 @@ namespace Messenger.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Chats");
+                    b.ToTable("Chats", (string)null);
                 });
 
             modelBuilder.Entity("Messenger.Domain.Entities.Message", b =>
@@ -94,7 +94,6 @@ namespace Messenger.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Content")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("EncryptedAesKey")
@@ -121,9 +120,6 @@ namespace Messenger.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
@@ -133,7 +129,7 @@ namespace Messenger.Infrastructure.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("Messages");
+                    b.ToTable("Messages", (string)null);
                 });
 
             modelBuilder.Entity("Messenger.Domain.Entities.PublicKey", b =>
@@ -163,7 +159,7 @@ namespace Messenger.Infrastructure.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("PublicKeys");
+                    b.ToTable("PublicKeys", (string)null);
                 });
 
             modelBuilder.Entity("Messenger.Domain.Entities.User", b =>
@@ -196,7 +192,7 @@ namespace Messenger.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Messenger.Domain.Entities.Message", b =>

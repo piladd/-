@@ -5,94 +5,47 @@ using Messenger.Persistence.Repositories;
 namespace Messenger.Application.Chat.Services;
 
 /// <summary>
-/// Сервис для отправки и получения сообщений между пользователями.
+/// IMessageService для приватного чата 1-на-1.
+/// Шифрование/расшифровка — на клиенте, сервер хранит только Base64-строки.
 /// </summary>
 public class MessageService : IMessageService
 {
-    private readonly MessageRepository _messageRepository;
-    private readonly ChatRepository _chatRepository;
+    private readonly ChatRepository    _chatRepo;
+    private readonly MessageRepository _msgRepo;
 
     public MessageService(
-        MessageRepository messageRepository,
-        ChatRepository chatRepository)
+        MessageRepository msgRepo,
+        ChatRepository    chatRepo)
     {
-        _messageRepository = messageRepository;
-        _chatRepository = chatRepository;
+        _msgRepo  = msgRepo;
+        _chatRepo = chatRepo;
     }
 
-    /// <summary>
-    /// Отправляет новое сообщение от одного пользователя другому.
-    /// Создаёт чат, если он ещё не существует.
-    /// </summary>
-    public async Task<MessageDto> SendMessageAsync(Guid senderId, SendMessageRequest request)
+    /// <inheritdoc/>
+    public async Task<Guid> CreateDialogAsync(Guid userA, Guid userB)
     {
-        Guid chatId;
+        // 1) Попробовать найти уже существующий
+        var existing = await _chatRepo.GetPrivateChatAsync(userA, userB);
+        if (existing != null) return existing.Id;
 
-        if (request.ChatId.HasValue && request.ChatId.Value != Guid.Empty)
+        // 2) Иначе создаём новый
+        var chat = new Domain.Entities.Chat
         {
-            var existing = await _chatRepository.GetByIdAsync(request.ChatId.Value);
-            if (existing is null)
-                throw new Exception("Чат с указанным ID не существует.");
-
-            chatId = existing.Id;
-        }
-        else
-        {
-            var privateChat = await _chatRepository.GetPrivateChatAsync(senderId, request.ReceiverId);
-
-            if (privateChat is null)
-            {
-                privateChat = new Domain.Entities.Chat
-                {
-                    Id = Guid.NewGuid(),
-                    Title = $"Chat_{senderId}_{request.ReceiverId}",
-                    CreatedAt = DateTime.UtcNow,
-                    ParticipantIds = [senderId, request.ReceiverId],
-                    Messages = new List<Message>()
-                };
-                await _chatRepository.AddAsync(privateChat);
-            }
-
-            chatId = privateChat.Id;
-        }
-
-        // Создаём сообщение
-        var message = new Message
-        {
-            Id               = Guid.NewGuid(),
-            ChatId           = chatId,
-            SenderId         = senderId,
-            ReceiverId       = request.ReceiverId,
-            EncryptedContent = request.EncryptedContent,
-            EncryptedAesKey  = request.EncryptedAesKey,
-            Iv               = request.Iv,
-            Content          = request.Content,
-            Type             = request.Type,
-            SentAt           = DateTime.UtcNow,
-            Status           = MessageStatus.Sent
+            Id             = Guid.NewGuid(),
+            Title          = $"Dialog_{userA:N}_{userB:N}",
+            CreatedAt      = DateTime.UtcNow,
+            ParticipantIds = new List<Guid> { userA, userB }
         };
-
-        await _messageRepository.AddAsync(message);
-
-        return new MessageDto
-        {
-            Id               = message.Id,
-            ChatId           = message.ChatId,
-            SenderId         = message.SenderId,
-            ReceiverId       = message.ReceiverId,
-            EncryptedContent = message.EncryptedContent,
-            EncryptedAesKey  = message.EncryptedAesKey,
-            Iv               = message.Iv,
-            SentAt           = message.SentAt,
-            Status           = message.Status,
-            Type             = message.Type
-        };
+        await _chatRepo.AddAsync(chat);
+        return chat.Id;
     }
 
-    public async Task<List<MessageDto>> GetChatHistoryAsync(Guid senderId, Guid receiverId)
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<MessageDto>> GetDialogHistoryAsync(Guid chatId)
     {
-        var messages = await _messageRepository.GetMessagesBetweenUsersAsync(senderId, receiverId);
-        return messages
+        // получаем все сообщения по chatId
+        var msgs = await _chatRepo.GetMessagesByChatIdAsync(chatId);
+        return msgs
             .OrderBy(m => m.SentAt)
             .Select(m => new MessageDto
             {
@@ -103,15 +56,57 @@ public class MessageService : IMessageService
                 EncryptedContent = m.EncryptedContent,
                 EncryptedAesKey  = m.EncryptedAesKey,
                 Iv               = m.Iv,
-                SentAt           = m.SentAt,
+                Type             = m.Type,
                 Status           = m.Status,
-                Type             = m.Type
+                SentAt           = m.SentAt
             })
             .ToList();
     }
 
-    public async Task UpdateMessageStatusAsync(Guid messageId, MessageStatus status)
+    /// <inheritdoc/>
+    public async Task<MessageDto> SendMessageAsync(Guid senderId, SendMessageRequest request)
     {
-        await _messageRepository.UpdateStatusAsync(messageId, status);
+        // 1) Проверяем, что чат существует (ChatId приходит из контроллера)
+        var chat = await _chatRepo.GetByIdAsync(request.ChatId)
+                   ?? throw new InvalidOperationException($"Chat {request.ChatId} not found");
+
+        if (!chat.ParticipantIds.Contains(senderId))
+            throw new UnauthorizedAccessException("Sender is not a chat participant.");
+
+        // 2) Создаём и сохраняем новое сообщение
+        var message = new Message
+        {
+            Id               = Guid.NewGuid(),
+            ChatId           = chat.Id,
+            SenderId         = senderId,
+            ReceiverId       = request.ReceiverId,
+            EncryptedContent = request.EncryptedContent,
+            EncryptedAesKey  = request.EncryptedAesKey,
+            Iv               = request.Iv,
+            Content          = request.Content,
+            Type             = request.Type,
+            SentAt           = DateTime.UtcNow,
+            Status           = MessageStatus.Sent
+        };
+        await _msgRepo.AddAsync(message);
+
+        // 3) Возвращаем DTO
+        return new MessageDto
+        {
+            Id               = message.Id,
+            ChatId           = message.ChatId,
+            SenderId         = message.SenderId,
+            ReceiverId       = message.ReceiverId,
+            EncryptedContent = message.EncryptedContent,
+            EncryptedAesKey  = message.EncryptedAesKey,
+            Iv               = message.Iv,
+            Type             = message.Type,
+            Status           = message.Status,
+            SentAt           = message.SentAt
+        };
     }
+
+    /// <inheritdoc/>
+    public Task UpdateMessageStatusAsync(Guid messageId, MessageStatus status)
+        => _msgRepo.UpdateStatusAsync(messageId, status);
 }

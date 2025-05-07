@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Messenger.Persistence.Migrations
 {
     [DbContext(typeof(MessengerDbContext))]
-    [Migration("20250501191917_AddMessageType")]
-    partial class AddMessageType
+    [Migration("20250507142856_AddChatAndMessages")]
+    partial class AddChatAndMessages
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -97,7 +97,6 @@ namespace Messenger.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Content")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("EncryptedAesKey")
@@ -123,9 +122,6 @@ namespace Messenger.Persistence.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Type")
                         .HasColumnType("integer");
