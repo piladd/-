@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Messenger.Infrastructure.Migrations
+namespace Messenger.Persistence.Migrations
 {
     [DbContext(typeof(MessengerDbContext))]
     [Migration("20250501153933_AddKeySecurityFields")]

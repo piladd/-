@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Messenger.Infrastructure.Migrations
+namespace Messenger.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class AddMessageStatus : Migration

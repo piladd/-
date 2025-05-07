@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Messenger.Application.Chat.DTOs;
 using Messenger.Application.Chat.Services;
-using Microsoft.AspNetCore.Mvc;
 using Messenger.Domain.Entities;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Messenger.API.Endpoints;
 
@@ -14,36 +14,62 @@ public static class ChatEndpoints
             .WithTags("Chat")
             .RequireAuthorization();
 
-        // Отправка сообщения
+        // Отправка сообщения (ChatId передаётся в теле запроса)
         group.MapPost("/send", async (
-            ClaimsPrincipal user,
-            [FromBody] SendMessageRequest request,
-            IMessageService messageService) =>
-        {
-            var senderId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (senderId is null)
-                return Results.Unauthorized();
+                ClaimsPrincipal user,
+                [FromBody] SendMessageRequest request,
+                [FromServices] IMessageService messageService) =>
+            {
+                var senderIdStr = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (senderIdStr is null)
+                    return Results.Unauthorized();
 
-            var result = await messageService.SendMessageAsync(Guid.Parse(senderId), request);
+                var senderId = Guid.Parse(senderIdStr);
+                var result   = await messageService.SendMessageAsync(senderId, request);
 
-            if (result is null)
-                return Results.BadRequest("Чат с получателем не найден.");
+                return result is null
+                    ? Results.BadRequest("Чат с получателем не найден.")
+                    : Results.Ok(result);
+            })
+            .WithName("SendMessage")
+            .Accepts<SendMessageRequest>("application/json")
+            .Produces<MessageDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
 
-            return Results.Ok(result);
-        });
+        // Получение истории диалога по chatId
+        group.MapGet("/history/{chatId:guid}", async (
+                ClaimsPrincipal user,
+                Guid chatId,
+                [FromServices] IMessageService messageService) =>
+            {
+                var senderIdStr = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (senderIdStr is null)
+                    return Results.Unauthorized();
 
-        // Получение истории чата
-        group.MapGet("/history/{recipientId:guid}", async (
-            ClaimsPrincipal user,
-            Guid recipientId,
-            IMessageService messageService) =>
-        {
-            var senderId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (senderId is null) return Results.Unauthorized();
+                // Получаем зашифрованную историю по одному параметру chatId
+                var history = await messageService.GetDialogHistoryAsync(chatId);
+                return Results.Ok(history);
+            })
+            .WithName("GetChatHistory")
+            .Produces<IEnumerable<MessageDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
 
-            var messages = await messageService.GetChatHistoryAsync(Guid.Parse(senderId), recipientId);
-            return Results.Ok(messages);
-        });
+        group.MapPost("/start", async (
+                ClaimsPrincipal user,
+                [FromBody] StartDialogRequest req,
+                IMessageService svc) =>
+            {
+                var me = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (me == null) return Results.Unauthorized();
+
+                var chatId = await svc.CreateDialogAsync(Guid.Parse(me), req.InterlocutorId);
+                return Results.Ok(new { chatId });
+            })
+            .WithName("StartDialog")
+            .Accepts<StartDialogRequest>("application/json")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
     }
 
     public static void MapMessageEndpoints(this IEndpointRouteBuilder app)
@@ -52,30 +78,36 @@ public static class ChatEndpoints
             .WithTags("Messages")
             .RequireAuthorization();
 
-        // Статус Delivered
+        // Пометить доставленным
         group.MapPost("/delivered/{messageId:guid}", async (
-            Guid messageId,
-            [FromServices] IMessageService messageService,
-            ClaimsPrincipal user) =>
-        {
-            var userIdStr = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userIdStr is null) return Results.Unauthorized();
+                Guid messageId,
+                [FromServices] IMessageService messageService,
+                ClaimsPrincipal user) =>
+            {
+                if (user.FindFirstValue(ClaimTypes.NameIdentifier) is null)
+                    return Results.Unauthorized();
 
-            await messageService.UpdateMessageStatusAsync(messageId, MessageStatus.Delivered);
-            return Results.Ok();
-        });
+                await messageService.UpdateMessageStatusAsync(messageId, MessageStatus.Delivered);
+                return Results.Ok();
+            })
+            .WithName("MarkDelivered")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
 
-        // Статус Read
+        // Пометить прочитанным
         group.MapPost("/read/{messageId:guid}", async (
-            Guid messageId,
-            [FromServices] IMessageService messageService,
-            ClaimsPrincipal user) =>
-        {
-            var userIdStr = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userIdStr is null) return Results.Unauthorized();
+                Guid messageId,
+                [FromServices] IMessageService messageService,
+                ClaimsPrincipal user) =>
+            {
+                if (user.FindFirstValue(ClaimTypes.NameIdentifier) is null)
+                    return Results.Unauthorized();
 
-            await messageService.UpdateMessageStatusAsync(messageId, MessageStatus.Read);
-            return Results.Ok();
-        });
+                await messageService.UpdateMessageStatusAsync(messageId, MessageStatus.Read);
+                return Results.Ok();
+            })
+            .WithName("MarkRead")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
     }
 }
