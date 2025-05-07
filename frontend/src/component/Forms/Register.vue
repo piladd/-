@@ -39,8 +39,9 @@ const error = ref('')
 const router = useRouter()
 const auth = useAuthStore()
 
+
 const handleRegister = async () => {
-  error.value = ''
+  error.value     = ''
   isLoading.value = true
 
   const success = await auth.register(username.value.trim(), password.value)
@@ -52,6 +53,7 @@ const handleRegister = async () => {
     error.value = 'Не удалось зарегистрироваться. Попробуйте снова.'
   }
 }
+
 </script>
 
 <style scoped>
