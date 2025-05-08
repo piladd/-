@@ -1,4 +1,4 @@
-const TOKEN_KEY = 'auth_token'
+const TOKEN_KEY = 'token'
 
 export function saveToken(token: string) {
     console.log('💾 saveToken got:', token, ' type=', typeof token)
