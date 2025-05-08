@@ -108,7 +108,7 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 .chat-item.active {
-  background-color: #f0f0f0;
+  background-color: #484a4f;
 }
 
 /* аватар */

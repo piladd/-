@@ -28,5 +28,10 @@ export async function register(data: { username: string; password: string }): Pr
 
 export async function login(data: LoginRequest): Promise<AuthResponse> {
   const { data: auth } = await api.post<AuthResponse>('/api/auth/login', data)
+  if (auth.privateKey) {
+    // если storePrivateKey ожидает CryptoKey, можно обойтись так:
+    localStorage.setItem('privateKeyBase64', auth.privateKey)
+    // либо, предпочтительнее, импортировать его в CryptoKey и потом store:
+  }
   return auth
 }
