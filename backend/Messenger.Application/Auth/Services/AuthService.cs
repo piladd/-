@@ -68,7 +68,8 @@ namespace Messenger.Application.Auth.Services
                 UserId    = user.Id,
                 Username  = user.Username,
                 PublicKey = user.PublicKey
-                            ?? throw new ApplicationException("У пользователя отсутствует publicKey.")
+                            ?? throw new ApplicationException("У пользователя отсутствует publicKey."),
+                PrivateKey = user.PrivateKey
             };
         }
 

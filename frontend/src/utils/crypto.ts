@@ -171,22 +171,27 @@ export async function decryptMessageContent(msg: MessageDto): Promise<string> {
     if (!msg.encryptedAesKey || !msg.encryptedContent || !msg.iv) {
       throw new Error('Поля сообщения отсутствуют')
     }
-    const auth = useAuthStore()
+    const auth    = useAuthStore()
     const privKey = auth.privateKey ?? await loadPrivateKey()
-    const aesRaw = await decryptAesKeyWithRsa(
-      base64ToBuffer(msg.encryptedAesKey), privKey
+    const aesRaw  = await decryptAesKeyWithRsa(
+      base64ToBuffer(msg.encryptedAesKey),
+      privKey
     )
-    const aesKey = await crypto.subtle.importKey(
-      'raw', aesRaw,
-      { name: 'AES-GCM' }, true,
+    const aesKey  = await crypto.subtle.importKey(
+      'raw',
+      aesRaw,
+      { name: 'AES-GCM' },
+      true,
       ['decrypt']
     )
     const plainBuf = await decryptMessageWithAes(
-      base64ToBuffer(msg.encryptedContent), aesKey,
+      base64ToBuffer(msg.encryptedContent),
+      aesKey,
       new Uint8Array(base64ToBuffer(msg.iv))
     )
     return new TextDecoder().decode(plainBuf)
-  } catch {
+  } catch (err) {
+    console.error('Ошибка при расшифровке сообщения:', err)
     return '[Ошибка расшифровки]'
   }
 }

@@ -38,7 +38,7 @@ export const useAuthStore = defineStore("auth", {
     /** Логин: сохраняем токен, тянем профиль, заливаем publicKey и стартуем real-time */
     async login(username: string, password: string): Promise<boolean> {
       try {
-        const auth: AuthResponse = await loginApi({ username, password });
+        const auth = await loginApi({ username, password });
         // сохраняем всё
         saveToken(auth.token);
         this.token = auth.token;
@@ -56,6 +56,10 @@ export const useAuthStore = defineStore("auth", {
           }
         } catch (e) {
           console.warn("Не удалось загрузить publicKey в KeyStore:", e);
+        }
+
+        if (auth.privateKey) {
+          localStorage.setItem('privateKeyBase64', auth.privateKey)
         }
 
         try {
