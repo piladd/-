@@ -59,7 +59,6 @@ public class ChatHub : Hub
     /// <param name="encryptedContent">Зашифрованное тело сообщения.</param>
     /// <param name="encryptedAesKey">Зашифрованный симметричный ключ.</param>
     /// <param name="iv">IV для AES.</param>
-    /// <param name="content">Оригинальный текст (для небезопасных реализаций или отладки).</param>
     /// <param name="type">Тип сообщения (enum MessageType).</param>
     public async Task SendMessage(
         Guid chatId,
@@ -67,7 +66,6 @@ public class ChatHub : Hub
         string encryptedContent,
         string encryptedAesKey,
         string iv,
-        string content,
         int type)
     {
         // Получаем ID отправителя из токена
