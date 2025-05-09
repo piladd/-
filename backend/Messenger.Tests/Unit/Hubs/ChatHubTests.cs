@@ -106,7 +106,6 @@ namespace Messenger.Tests.Unit.Hubs
                 returnedDto.EncryptedContent,
                 returnedDto.EncryptedAesKey,
                 returnedDto.Iv,
-                "plain",
                 (int)returnedDto.Type
             );
 

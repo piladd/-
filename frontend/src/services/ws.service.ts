@@ -2,82 +2,65 @@
 import { HubConnection, HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import type { MessageDto } from "@/types/Message";
 
-class WsService {
+export class WsService {
     private connection: HubConnection | null = null;
 
-    /**
-     * Устанавливает SignalR-соединение.
-     * @param userId – текущий userId
-     * @param token – JWT-токен
-     */
-    async connect(userId: string, token: string): Promise<void> {
-        if (this.connection) return; // уже подключены
+    async connect(userId: string, token: string) {
+        if (this.connection) return;
+
+        const url = import.meta.env.VITE_WS_URL!;
+        console.log("🛰️ SignalR connecting to:", url);
+        if (!url) throw new Error("VITE_WS_URL не задан в .env");
 
         this.connection = new HubConnectionBuilder()
-            .withUrl(`${import.meta.env.VITE_API_URL}/hubs/chat`, {
-                accessTokenFactory: () => token
-            })
+            .withUrl(url, { accessTokenFactory: () => token })
             .withAutomaticReconnect()
-            .configureLogging(LogLevel.Warning)
+            .configureLogging(LogLevel.Information)
             .build();
 
-        this.connection.onreconnecting(err => {
-            console.warn("SignalR reconnecting:", err);
-        });
-        this.connection.onreconnected(cid => {
-            console.log("SignalR reconnected, id:", cid);
-        });
-        this.connection.onclose(err => {
-            console.log("SignalR closed:", err);
-            this.connection = null;
-        });
-
         await this.connection.start();
-        console.log("🟢 SignalR connected");
+        console.log("🛰️ SignalR connected");
     }
 
-    /**
-     * Отправляет сообщение на сервер.
-     */
-    async send(payload: {
+    async joinChat(chatId: string) {
+        if (!this.connection) throw new Error("SignalR не подключён");
+        await this.connection.invoke("JoinChat", chatId);
+    }
+
+    onMessage(cb: (msg: MessageDto) => void) {
+        if (!this.connection) throw new Error("SignalR не подключён");
+        this.connection.on("ReceiveMessage", payload => {
+            console.log("🔔 WS got:", payload);
+            cb(payload as MessageDto);
+        });
+    }
+
+    async send(msg: {
         chatId: string;
         receiverId: string;
         encryptedContent: string;
         encryptedAesKey: string;
         iv: string;
-        content: string;
         type: number;
-    }): Promise<void> {
-        if (!this.connection) throw new Error("SignalR is not connected");
+    }) {
+        if (!this.connection) throw new Error("SignalR не подключён");
+
+        // Вызываем SendMessage с ровно СЕСТЬЮ аргументами,
+        // как у вас теперь на сервере:
         await this.connection.invoke(
             "SendMessage",
-            payload.chatId,
-            payload.receiverId,
-            payload.encryptedContent,
-            payload.encryptedAesKey,
-            payload.iv,
-            payload.content,
-            payload.type
+            msg.chatId,
+            msg.receiverId,
+            msg.encryptedContent,
+            msg.encryptedAesKey,
+            msg.iv,
+            msg.type
         );
     }
 
-    /**
-     * Подписывает колбэк на все входящие сообщения.
-     */
-    onMessage(cb: (msg: MessageDto) => void): void {
-        if (!this.connection) throw new Error("SignalR is not connected");
-        this.connection.on("ReceiveMessage", cb);
-    }
-
-    /**
-     * Отключается от хаба.
-     */
-    async disconnect(): Promise<void> {
-        if (this.connection) {
-            await this.connection.stop();
-            this.connection = null;
-            console.log("🔴 SignalR disconnected");
-        }
+    async disconnect() {
+        await this.connection?.stop();
+        this.connection = null;
     }
 }
 

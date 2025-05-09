@@ -11,10 +11,14 @@ export interface MessageDto {
     createdAt: string
     decryptedContent?: string | null
 }
+
+
 export interface SendMessageRequest {
-    encryptedContent: string
+    receiverId:      string   // Guid получателя
+    chatId:          string   // Guid чата
+    encryptedContent:string
     encryptedAesKey: string
-    iv: string
-    content?: string
-    type?: number
+    iv:              string
+    type?:           number
 }
+  

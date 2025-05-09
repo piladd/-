@@ -25,8 +25,8 @@ export default defineConfig({
         changeOrigin: true,
         secure: false
       },
-      '/hub': {
-        target: 'wss://messenger-api:443',
+      '/hubs': {
+        target: 'https://messenger-api:443',    // ← было wss://messenger-api:443
         ws: true,
         changeOrigin: true,
         secure: false

@@ -37,16 +37,16 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useUserStore } from '@/store/user'
-import { useChatStore } from '@/store/chat'
+import { useMessageStore } from '@/store/message'
 import { useAuthStore } from '@/store/auth'
 import defaultAvatar from '@/assets/default-avatar.png'
 
 const searchQuery = ref('')
 const userStore   = useUserStore()
-const chatStore   = useChatStore()
+const messageStore   = useMessageStore()
 const authStore   = useAuthStore()
 
-const selectedUserId = computed(() => chatStore.currentRecipientId)
+const selectedUserId = computed(() => messageStore.currentRecipientId)
 
 // Исключаем из списка себя и фильтруем по введённому запросу
 const filteredUsers = computed(() =>
@@ -62,8 +62,8 @@ function onSearch() {
 }
 
 function selectUser(id: string) {
-  chatStore.setCurrentRecipient(id)
-  chatStore.fetchMessages(id)
+  // loadMessages установит currentRecipientId и загрузит историю
+  messageStore.loadMessages(id)
 }
 
 onMounted(() => {

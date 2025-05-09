@@ -31,6 +31,7 @@
 import {ref} from 'vue'
 import {useRouter} from 'vue-router'
 import {useAuthStore} from '@/store/auth'
+import { generateAndUploadKeyPair } from '@/utils/crypto'
 
 const username = ref('')
 const password = ref('')
@@ -48,6 +49,7 @@ const handleRegister = async () => {
   isLoading.value = false
 
   if (success) {
+    await generateAndUploadKeyPair()
     router.push('/chat')
   } else {
     error.value = 'Не удалось зарегистрироваться. Попробуйте снова.'

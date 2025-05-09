@@ -1,8 +1,8 @@
 // src/utils/crypto.ts
 
-import api from '@/services/api'
 import { useAuthStore } from '@/store/auth'
-import type { SendMessageRequest, MessageDto } from '@/types/Message'
+import type { MessageDto } from '@/types/Message'
+import { uploadPublicKey, getPublicKey } from '@/services/chat.service'
 
 /** Нормализация Base64 (URL-safe → стандартный) */
 function normalizeBase64(b64: string): string {
@@ -14,11 +14,9 @@ function normalizeBase64(b64: string): string {
 /** Base64 → ArrayBuffer */
 export function base64ToBuffer(base64: string): ArrayBuffer {
   const normalized = normalizeBase64(base64)
-  const bin        = atob(normalized)
-  const bytes      = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) {
-    bytes[i] = bin.charCodeAt(i)
-  }
+  const bin = atob(normalized)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
   return bytes.buffer
 }
 
@@ -28,21 +26,14 @@ export function bufferToBase64(input: ArrayBuffer | ArrayBufferView): string {
     ? new Uint8Array(input)
     : new Uint8Array(input.buffer, input.byteOffset, input.byteLength)
   let bin = ''
-  for (let i = 0; i < bytes.byteLength; i++) {
-    bin += String.fromCharCode(bytes[i])
-  }
+  for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i])
   return btoa(bin)
 }
 
 /** Генерация пары RSA-OAEP (2048 бит, SHA-256) */
 export async function generateKeyPair(): Promise<CryptoKeyPair> {
   return crypto.subtle.generateKey(
-    {
-      name: 'RSA-OAEP',
-      modulusLength: 2048,
-      publicExponent: new Uint8Array([1, 0, 1]),
-      hash: 'SHA-256'
-    },
+    { name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
     true,
     ['encrypt', 'decrypt']
   )
@@ -58,8 +49,7 @@ export async function exportRsaPublicKey(key: CryptoKey): Promise<string> {
 export async function importRsaPublicKey(keyBase64: string): Promise<CryptoKey> {
   const buff = base64ToBuffer(keyBase64)
   return crypto.subtle.importKey(
-    'spki',
-    buff,
+    'spki', buff,
     { name: 'RSA-OAEP', hash: 'SHA-256' },
     true,
     ['encrypt']
@@ -84,8 +74,7 @@ export async function loadPrivateKey(): Promise<CryptoKey> {
   if (!b64) throw new Error('Нет приватного ключа в хранилище')
   const buffer = base64ToBuffer(b64)
   return crypto.subtle.importKey(
-    'pkcs8',
-    buffer,
+    'pkcs8', buffer,
     { name: 'RSA-OAEP', hash: 'SHA-256' },
     true,
     ['decrypt']
@@ -147,62 +136,116 @@ async function getPublicKeyBase64(userId: string | null): Promise<string> {
   if (!userId) throw new Error('userId отсутствует')
   const auth = useAuthStore()
   if (userId === auth.userId) {
-    if (!auth.publicKey) throw new Error('Нет publicKey в сторе')
-    return auth.publicKey
+    if (!auth.publicKey) await generateAndUploadKeyPair()
+    return auth.publicKey!
   }
   const cacheKey = `publicKey_${userId}`
-  const cached  = localStorage.getItem(cacheKey)
+  const cached = localStorage.getItem(cacheKey)
   if (cached) return cached
-  const { data } = await api.get<{ keyBase64: string }>(`/api/keys/${userId}`)
-  if (!data.keyBase64) throw Object.assign(new Error('У получателя нет публичного ключа'), { code: 404 })
-  localStorage.setItem(cacheKey, data.keyBase64)
-  return data.keyBase64
+  const keyBase64 = await getPublicKey(userId)
+  localStorage.setItem(cacheKey, keyBase64)
+  return keyBase64
 }
 
-/** Шифрование для получателя */
+/** Шифрование для получателя -> возвращает только данные шифрования */
 export async function encryptForRecipient(
   recipientId: string,
   plaintext: string
-): Promise<SendMessageRequest> {
-  const aesKey    = await generateAesKey()
-  const iv        = generateIv()
-  const cipher    = await encryptMessageWithAes(plaintext, aesKey, iv)
-  const keyB64    = await getPublicKeyBase64(recipientId)
-  const rsaPub    = await importRsaPublicKey(keyB64)
+): Promise<{ encryptedContent: string; encryptedAesKey: string; iv: string }> {
+  const aesKey = await generateAesKey()
+  const iv = generateIv()
+  const cipher = await encryptMessageWithAes(plaintext, aesKey, iv)
+  const keyB64 = await getPublicKeyBase64(recipientId)
+  const rsaPub = await importRsaPublicKey(keyB64)
   const encAesKey = await encryptAesKeyWithRsa(aesKey, rsaPub)
   return {
     encryptedContent: bufferToBase64(cipher),
-    encryptedAesKey:  bufferToBase64(encAesKey),
-    iv:               bufferToBase64(iv)
+    encryptedAesKey: bufferToBase64(encAesKey),
+    iv: bufferToBase64(iv)
   }
 }
 
 /** Дешифровка входящего сообщения */
+// src/utils/crypto.ts
+
 export async function decryptMessageContent(msg: MessageDto): Promise<string> {
   try {
     if (!msg.encryptedAesKey || !msg.encryptedContent || !msg.iv) {
-      throw new Error('Поля сообщения отсутствуют')
+      throw new Error('Поля сообщения отсутствуют');
     }
-    const auth    = useAuthStore()
-    const privKey = auth.privateKey ?? await loadPrivateKey()
-    const aesRaw  = await decryptAesKeyWithRsa(
-      base64ToBuffer(msg.encryptedAesKey),
-      privKey
-    )
-    const aesKey  = await crypto.subtle.importKey(
-      'raw',
-      aesRaw,
-      { name: 'AES-GCM' },
-      true,
-      ['decrypt']
-    )
-    const plainBuf = await decryptMessageWithAes(
-      base64ToBuffer(msg.encryptedContent),
-      aesKey,
-      new Uint8Array(base64ToBuffer(msg.iv))
-    )
-    return new TextDecoder().decode(plainBuf)
-  } catch {
-    return '[Ошибка расшифровки]'
+
+    const auth    = useAuthStore();
+    const privKey = auth.privateKey ?? await loadPrivateKey();
+
+    // Отладочные логи: убедимся, что base64-строки корректны
+    console.log('🔑 Encrypted AES key (B64):', msg.encryptedAesKey);
+    console.log('📜 Ciphertext (B64):',      msg.encryptedContent);
+    console.log('🔬 IV (B64):',              msg.iv);
+
+    // 1) Раскодируем и дешифруем AES-ключ через RSA-OAEP
+    let aesRaw: ArrayBuffer;
+    try {
+      aesRaw = await decryptAesKeyWithRsa(
+        base64ToBuffer(msg.encryptedAesKey),
+        privKey
+      );
+      console.log('🔑 AES raw key bytes:', new Uint8Array(aesRaw));
+    } catch (e) {
+      console.error('❌ RSA-OAEP дешифровка не удалась:', e);
+      throw e;  // чтобы попасть в общий catch и вернуть «[Ошибка расшифровки]»
+    }
+
+    // 2) Импортируем AES-ключ
+    let aesKey: CryptoKey;
+    try {
+      aesKey = await crypto.subtle.importKey(
+        'raw',
+        aesRaw,
+        { name: 'AES-GCM' },
+        false,
+        ['decrypt']
+      );
+    } catch (e) {
+      console.error('❌ Ошибка при импорте AES-ключа:', e);
+      throw e;
+    }
+
+    // 3) Подготовим IV и ciphertext
+    const ivBuf     = new Uint8Array(base64ToBuffer(msg.iv));
+    const cipherBuf = base64ToBuffer(msg.encryptedContent);
+
+    console.log('🔬 IV bytes:',     ivBuf);
+    console.log('📜 Cipher bytes:', new Uint8Array(cipherBuf));
+
+    // 4) Дешифруем AES-GCM
+    let plainBuf: ArrayBuffer;
+    try {
+      plainBuf = await decryptMessageWithAes(
+        cipherBuf,
+        aesKey,
+        ivBuf
+      );
+    } catch (e) {
+      console.error('❌ AES-GCM дешифровка не удалась:', e);
+      throw e;
+    }
+
+    // 5) Успешно распознали плейн-текст
+    return new TextDecoder().decode(plainBuf);
+
+  } catch (err: any) {
+    console.error('Ошибка при расшифровке сообщения:', err); // этот лог вы уже видели :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
+    return '[Ошибка расшифровки]';
   }
+}
+
+
+/** Генерация RSA-OAEP пары и загрузка публичного ключа на сервер */
+export async function generateAndUploadKeyPair(): Promise<void> {
+  const keyPair = await generateKeyPair()
+  const publicKeyBase64 = await exportRsaPublicKey(keyPair.publicKey)
+  await uploadPublicKey(publicKeyBase64)
+  await storePrivateKey(keyPair.privateKey)
+  const auth = useAuthStore()
+  auth.publicKey = publicKeyBase64
 }
