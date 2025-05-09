@@ -20,6 +20,5 @@ export interface SendMessageRequest {
     encryptedAesKey: string
     iv:              string
     type?:           number
-    content?:        string
 }
   

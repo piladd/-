@@ -166,35 +166,79 @@ export async function encryptForRecipient(
 }
 
 /** Дешифровка входящего сообщения */
+// src/utils/crypto.ts
+
 export async function decryptMessageContent(msg: MessageDto): Promise<string> {
   try {
     if (!msg.encryptedAesKey || !msg.encryptedContent || !msg.iv) {
-      throw new Error('Поля сообщения отсутствуют')
+      throw new Error('Поля сообщения отсутствуют');
     }
-    const auth    = useAuthStore()
-    const privKey = auth.privateKey ?? await loadPrivateKey()
-    const aesRaw  = await decryptAesKeyWithRsa(
-      base64ToBuffer(msg.encryptedAesKey),
-      privKey
-    )
-    const aesKey  = await crypto.subtle.importKey(
-      'raw',
-      aesRaw,
-      { name: 'AES-GCM' },
-      true,
-      ['decrypt']
-    )
-    const plainBuf = await decryptMessageWithAes(
-      base64ToBuffer(msg.encryptedContent),
-      aesKey,
-      new Uint8Array(base64ToBuffer(msg.iv))
-    )
-    return new TextDecoder().decode(plainBuf)
-  } catch (err) {
-    console.error('Ошибка при расшифровке сообщения:', err)
-    return '[Ошибка расшифровки]'
+
+    const auth    = useAuthStore();
+    const privKey = auth.privateKey ?? await loadPrivateKey();
+
+    // Отладочные логи: убедимся, что base64-строки корректны
+    console.log('🔑 Encrypted AES key (B64):', msg.encryptedAesKey);
+    console.log('📜 Ciphertext (B64):',      msg.encryptedContent);
+    console.log('🔬 IV (B64):',              msg.iv);
+
+    // 1) Раскодируем и дешифруем AES-ключ через RSA-OAEP
+    let aesRaw: ArrayBuffer;
+    try {
+      aesRaw = await decryptAesKeyWithRsa(
+        base64ToBuffer(msg.encryptedAesKey),
+        privKey
+      );
+      console.log('🔑 AES raw key bytes:', new Uint8Array(aesRaw));
+    } catch (e) {
+      console.error('❌ RSA-OAEP дешифровка не удалась:', e);
+      throw e;  // чтобы попасть в общий catch и вернуть «[Ошибка расшифровки]»
+    }
+
+    // 2) Импортируем AES-ключ
+    let aesKey: CryptoKey;
+    try {
+      aesKey = await crypto.subtle.importKey(
+        'raw',
+        aesRaw,
+        { name: 'AES-GCM' },
+        false,
+        ['decrypt']
+      );
+    } catch (e) {
+      console.error('❌ Ошибка при импорте AES-ключа:', e);
+      throw e;
+    }
+
+    // 3) Подготовим IV и ciphertext
+    const ivBuf     = new Uint8Array(base64ToBuffer(msg.iv));
+    const cipherBuf = base64ToBuffer(msg.encryptedContent);
+
+    console.log('🔬 IV bytes:',     ivBuf);
+    console.log('📜 Cipher bytes:', new Uint8Array(cipherBuf));
+
+    // 4) Дешифруем AES-GCM
+    let plainBuf: ArrayBuffer;
+    try {
+      plainBuf = await decryptMessageWithAes(
+        cipherBuf,
+        aesKey,
+        ivBuf
+      );
+    } catch (e) {
+      console.error('❌ AES-GCM дешифровка не удалась:', e);
+      throw e;
+    }
+
+    // 5) Успешно распознали плейн-текст
+    return new TextDecoder().decode(plainBuf);
+
+  } catch (err: any) {
+    console.error('Ошибка при расшифровке сообщения:', err); // этот лог вы уже видели :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
+    return '[Ошибка расшифровки]';
   }
 }
+
 
 /** Генерация RSA-OAEP пары и загрузка публичного ключа на сервер */
 export async function generateAndUploadKeyPair(): Promise<void> {

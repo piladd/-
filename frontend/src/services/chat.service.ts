@@ -18,11 +18,8 @@ export const getMessages = async (chatId: string): Promise<MessageDto[]> => {
 export const sendMessage = async (
   payload: SendMessageRequest
 ): Promise<MessageDto> => {
-  const { data: message } = await api.post<MessageDto>(
-    '/api/chat/send',
-    payload
-  )
-  return message
+  const { data } = await api.post<MessageDto>('/api/chat/send', payload)
+  return data
 }
 
 /**

@@ -2,83 +2,63 @@
 import { HubConnection, HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import type { MessageDto } from "@/types/Message";
 
-class WsService {
-    private connection: HubConnection | null = null;
-
-    /**
-     * Устанавливает SignalR-соединение.
-     * @param userId – текущий userId
-     * @param token – JWT-токен
-     */
-    async connect(userId: string, token: string): Promise<void> {
-        if (this.connection) return; // уже подключены
-
-        this.connection = new HubConnectionBuilder()
-            .withUrl(`${import.meta.env.VITE_API_URL}/hubs/chat`, {
-                accessTokenFactory: () => token
-            })
-            .withAutomaticReconnect()
-            .configureLogging(LogLevel.Warning)
-            .build();
-
-        this.connection.onreconnecting(err => {
-            console.warn("SignalR reconnecting:", err);
-        });
-        this.connection.onreconnected(cid => {
-            console.log("SignalR reconnected, id:", cid);
-        });
-        this.connection.onclose(err => {
-            console.log("SignalR closed:", err);
-            this.connection = null;
-        });
-
-        await this.connection.start();
-        console.log("🟢 SignalR connected");
+// src/services/ws.service.ts
+export class WsService {
+    private connection: HubConnection | null = null
+  
+    async connect(userId: string, token: string) {
+      if (this.connection) {
+        // уже подключены
+        return
+      }
+      this.connection = new HubConnectionBuilder()
+        .withUrl(import.meta.env.VITE_WS_URL!, { accessTokenFactory: () => token })
+        .withAutomaticReconnect()
+        .build()
+  
+      await this.connection.start()
     }
-
-    /**
-     * Отправляет сообщение на сервер.
-     */
-    async send(payload: {
-        chatId: string;
-        receiverId: string;
-        encryptedContent: string;
-        encryptedAesKey: string;
-        iv: string;
-        content: string;
-        type: number;
-    }): Promise<void> {
-        if (!this.connection) throw new Error("SignalR is not connected");
-        await this.connection.invoke(
-            "SendMessage",
-            payload.chatId,
-            payload.receiverId,
-            payload.encryptedContent,
-            payload.encryptedAesKey,
-            payload.iv,
-            payload.content,
-            payload.type
-        );
+  
+    // новый метод — чтобы «войти» в группу конкретного чата
+    async joinChat(chatId: string) {
+      if (!this.connection) throw new Error('SignalR не подключён')
+      await this.connection.invoke('JoinChat', chatId)
     }
-
-    /**
-     * Подписывает колбэк на все входящие сообщения.
-     */
-    onMessage(cb: (msg: MessageDto) => void): void {
-        if (!this.connection) throw new Error("SignalR is not connected");
-        this.connection.on("ReceiveMessage", cb);
+  
+    onMessage(cb: (msg: MessageDto) => void) {
+      if (!this.connection) throw new Error('SignalR не подключён')
+      // Сервер вызывает этот метод, когда у группы есть новое сообщение
+      this.connection.on('ReceiveMessage', (payload: any) => {
+        console.log('🔔 WS got:', payload)
+        cb(payload as MessageDto)
+      })
     }
-
-    /**
-     * Отключается от хаба.
-     */
-    async disconnect(): Promise<void> {
-        if (this.connection) {
-            await this.connection.stop();
-            this.connection = null;
-            console.log("🔴 SignalR disconnected");
-        }
+  
+    async send(msg: {
+      chatId: string
+      receiverId: string
+      encryptedContent: string
+      encryptedAesKey: string
+      iv: string
+      type: number
+    }) {
+      if (!this.connection) throw new Error('SignalR не подключён')
+      await this.connection.invoke(
+        'SendMessage',
+        msg.chatId,
+        msg.receiverId,
+        msg.encryptedContent,
+        msg.encryptedAesKey,
+        msg.iv,
+        msg.type
+      )
     }
-}
-
-export default new WsService();
+  
+    async disconnect() {
+      await this.connection?.stop()
+      this.connection = null
+    }
+  }
+  
+  export default new WsService()
+  
