@@ -10,6 +10,7 @@
 import {ref} from 'vue'
 import {useAuthStore} from '@/store/auth'
 import {useRouter} from 'vue-router'
+import { generateAndUploadKeyPair } from '@/utils/crypto'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -18,7 +19,10 @@ const password = ref('')
 
 const onSubmit = async () => {
   const success = await auth.login(username.value, password.value)
-  if (success) router.push('/chat')
+  if (success) {
+    await generateAndUploadKeyPair()
+    router.push('/chat')
+  }
 }
 </script>
 

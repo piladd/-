@@ -7,6 +7,7 @@ import {
   storePrivateKey,
   exportRsaPrivateKey
 } from '@/utils/crypto'
+// import { uploadPublicKey } from '@/services/chat.service'
 
 export async function register(data: { username: string; password: string }): Promise<AuthResponse> {
   // 1) Генерируем пару ключей
@@ -23,6 +24,8 @@ export async function register(data: { username: string; password: string }): Pr
     privateKey: privateKeyB64                           // ← новое поле
   }
   const { data: auth } = await api.post<AuthResponse>('/api/auth/register', payload)
+  // 3) И теперь ещё раз посылаем тот же publicKey в Key-Exchange-эндоинт
+  // await uploadPublicKey(publicKeyB64)
   return auth
 }
 

@@ -1,4 +1,4 @@
-// frontend/src/store/auth.ts
+// src/store/auth.ts
 import { defineStore } from "pinia";
 import {
   login as loginApi,
@@ -11,6 +11,7 @@ import { fetchMe } from "@/services/user.service";
 import wsService from "@/services/ws.service";
 import { useMessageStore } from "./message";
 import type { UserDto } from "@/types/User";
+import { uploadPublicKey } from "@/services/chat.service";
 
 interface AuthState {
   token: string;
@@ -34,7 +35,7 @@ export const useAuthStore = defineStore("auth", {
   }),
 
   actions: {
-    /** Логин: сохраняем токен, тянем профиль и стартуем real-time */
+    /** Логин: сохраняем токен, тянем профиль, заливаем publicKey и стартуем real-time */
     async login(username: string, password: string): Promise<boolean> {
       try {
         const auth: AuthResponse = await loginApi({ username, password });
@@ -48,13 +49,21 @@ export const useAuthStore = defineStore("auth", {
         localStorage.setItem("username", auth.username);
         localStorage.setItem("publicKey", auth.publicKey);
 
+        // попытаемся залить publicKey в Key-Store
+        try {
+          if (this.publicKey) {
+            await uploadPublicKey(this.publicKey);
+          }
+        } catch (e) {
+          console.warn("Не удалось загрузить publicKey в KeyStore:", e);
+        }
+
         try {
           this.privateKey = await loadPrivateKey();
         } catch {
-          console.warn('Приватный ключ не найден; продолжаем без него')
-          this.privateKey = null
+          console.warn('Приватный ключ не найден; продолжаем без него');
+          this.privateKey = null;
         }
-        
         this.isAuthenticated = true;
 
         await this.loadCurrentUser();
@@ -76,7 +85,7 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
-    /** Регистрация: аналогично login */
+    /** Регистрация: сохраняем токен, заливаем publicKey, тянем профиль и стартуем real-time */
     async register(username: string, password: string): Promise<boolean> {
       try {
         const auth: AuthResponse = await registerApi({ username, password });
@@ -89,10 +98,17 @@ export const useAuthStore = defineStore("auth", {
         localStorage.setItem("username", auth.username);
         localStorage.setItem("publicKey", auth.publicKey);
 
+        // заливка publicKey в Key-Store сразу после регистрации
+        try {
+          if (this.publicKey) {
+            await uploadPublicKey(this.publicKey);
+          }
+        } catch (e) {
+          console.warn("Не удалось загрузить publicKey в KeyStore:", e);
+        }
+
         this.privateKey = await loadPrivateKey();
-
         this.isAuthenticated = true;
-
         await this.loadCurrentUser();
 
         if (this.currentUser?.id) {

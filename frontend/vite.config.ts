@@ -21,12 +21,12 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'https://messenger-api:443',
+        target: 'https://localhost:5003',  // ← было https://messenger-api:443
         changeOrigin: true,
         secure: false
       },
       '/hub': {
-        target: 'wss://messenger-api:443',
+        target: 'wss://localhost:5003',    // ← было wss://messenger-api:443
         ws: true,
         changeOrigin: true,
         secure: false

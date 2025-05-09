@@ -6,30 +6,28 @@
 
     <div v-else class="messages">
       <MessageBubble
-          v-for="msg in messages"
-          :key="msg.id"
-          :message="msg"
-          :isMine="msg.senderId === currentUser?.id"
+        v-for="msg in messages"
+        :key="msg.id"
+        :message="msg"
+        :isMine="msg.senderId === currentUser?.id"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {ref, computed, watch, nextTick} from 'vue'
-import {useChatStore} from '@/store/chat'
-import {useMessageStore} from '@/store/message'
-import {useUserStore} from '@/store/user'
+import { ref, computed, watch, nextTick } from 'vue'
+import { useMessageStore } from '@/store/message'
+import { useUserStore } from '@/store/user'
 import MessageBubble from './MessageBubble.vue'
 
 const chatWindow = ref<HTMLElement | null>(null)
 
-const chatStore = useChatStore()
 const messageStore = useMessageStore()
 const userStore = useUserStore()
 
 const currentUser = computed(() => userStore.currentUser)
-const currentRecipientId = computed(() => chatStore.currentRecipientId)
+const currentRecipientId = computed(() => messageStore.currentRecipientId)
 const messages = computed(() => messageStore.messages)
 
 watch(messages, async () => {
@@ -39,6 +37,7 @@ watch(messages, async () => {
   }
 })
 </script>
+
 
 <style scoped>
 .chat-window {
