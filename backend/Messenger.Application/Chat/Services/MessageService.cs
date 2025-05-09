@@ -83,7 +83,6 @@ public class MessageService : IMessageService
             EncryptedContent = request.EncryptedContent,
             EncryptedAesKey  = request.EncryptedAesKey,
             Iv               = request.Iv,
-            Content          = request.Content,
             Type             = request.Type,
             SentAt           = DateTime.UtcNow,
             Status           = MessageStatus.Sent

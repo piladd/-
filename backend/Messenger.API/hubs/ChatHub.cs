@@ -83,7 +83,6 @@ public class ChatHub : Hub
             EncryptedContent = encryptedContent,
             EncryptedAesKey  = encryptedAesKey,
             Iv               = iv,
-            Content          = content,
             Type             = (Messenger.Domain.Enums.MessageType)type
         });
 

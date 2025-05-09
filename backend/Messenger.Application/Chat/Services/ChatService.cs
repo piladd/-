@@ -62,15 +62,13 @@ public class ChatService : IChatService
     /// <param name="chatId">ID чата</param>
     /// <param name="senderId">ID отправителя</param>
     /// <param name="messageId">ID сообщения</param>
-    /// <param name="content">Содержимое сообщения</param>
-    public async Task SendMessageAsync(Guid chatId, Guid senderId, Guid messageId, string content)
+    public async Task SendMessageAsync(Guid chatId, Guid senderId, Guid messageId)
     {
         var message = new Message
         {
             Id = messageId,
             ChatId = chatId,
             SenderId = senderId,
-            Content = content,
             SentAt = DateTime.UtcNow
         };
 
