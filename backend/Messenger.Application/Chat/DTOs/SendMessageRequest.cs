@@ -24,5 +24,4 @@ public class SendMessageRequest
     /// <summary>Тип сообщения (текст, картинка, файл).</summary>
     public MessageType Type { get; set; } = MessageType.Text;
 
-    public string? Content { get; set; }
 }

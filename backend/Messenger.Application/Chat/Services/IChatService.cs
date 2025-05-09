@@ -35,8 +35,7 @@ public interface IChatService
     /// <param name="chatId">ID чата</param>
     /// <param name="senderId">ID отправителя</param>
     /// <param name="messageId">ID сообщения</param>
-    /// <param name="content">Текст сообщения</param>
-    Task SendMessageAsync(Guid chatId, Guid senderId, Guid messageId, string content);
+    Task SendMessageAsync(Guid chatId, Guid senderId, Guid messageId);
 
     /// <summary>
     /// Возвращает все сообщения в указанном чате.
