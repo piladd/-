@@ -22,7 +22,5 @@ public class Message
     public DateTime SentAt { get; set; } = DateTime.UtcNow;
     public MessageStatus Status { get; set; } = MessageStatus.Sent;
     public Guid ReceiverId { get; set; }
-    public string? Content { get; set; }
-    
     public MessageType Type { get; set; } = MessageType.Text;
 }

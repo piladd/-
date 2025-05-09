@@ -51,7 +51,6 @@ namespace Messenger.Tests.Unit.Hubs
                         r.EncryptedContent == "enc" &&
                         r.EncryptedAesKey  == "key" &&
                         r.Iv               == "iv" &&
-                        r.Content          == "plain" &&
                         r.Type             == returnedDto.Type
                     )))
                 .ReturnsAsync(returnedDto);
