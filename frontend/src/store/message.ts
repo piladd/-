@@ -10,7 +10,7 @@ import type { MessageDto } from '@/types/Message'
 interface MessageState {
   currentRecipientId: string | null
   currentChatId:       string | null
-  messages:            (MessageDto & { decryptedContent?: string })[]
+  messages:            (MessageDto & { decryptedContent?: string; plainText?: string })[]
   isLoading:           boolean
   error:               string | null
 }
@@ -33,34 +33,45 @@ export const useMessageStore = defineStore('message', {
       try {
         // ——— 1) HTTP: получить/создать чат ———
         const { data } = await api.post<{ chatId: string }>(
-          '/api/chat/start',
-          { interlocutorId: recipientId }
+            '/api/chat/start',
+            { interlocutorId: recipientId }
         )
         this.currentChatId      = data.chatId
         this.currentRecipientId = recipientId
 
-        // ——— 2) HTTP: загрузить и расшифровать историю ———
+        // ——— 2) HTTP: загрузить и обрабатывать историю ———
         const msgs = await getMessages(this.currentChatId)
+        const auth = useAuthStore()
         this.messages = await Promise.all(
-          msgs.map(async msg => ({
-            ...msg,
-            decryptedContent: await decryptMessageContent(msg)
-          }))
+            msgs.map(async msg => {
+              // Вариант B: не расшифровываем свои сообщения, используем plaintext
+              let clear: string
+              if (msg.senderId === auth.userId) {
+                clear = msg.plainText ?? ''
+              } else {
+                clear = await decryptMessageContent(msg)
+              }
+              return {
+                ...msg,
+                decryptedContent: clear,
+              }
+            })
         )
 
         // ——— 3) WS: коннект + joinChat + onMessage ———
-        const auth = useAuthStore()
         // если ещё не подключены — подключаемся
         await wsService.connect(auth.userId!, auth.token)
-        // **заходим в группу чата** — иначе сервера не будет шлёть ReceiveMessage
+        // заходим в группу чата
         await wsService.joinChat(this.currentChatId!)
         // подписываемся на новые
         wsService.onMessage(async (msg: MessageDto) => {
           if (msg.chatId === this.currentChatId) {
-            const clear = await decryptMessageContent(msg)
+            const clear = msg.senderId === auth.userId
+                ? msg.plainText ?? ''
+                : await decryptMessageContent(msg)
             this.messages.push({
               ...msg,
-              decryptedContent: clear
+              decryptedContent: clear,
             })
           }
         })
@@ -71,7 +82,7 @@ export const useMessageStore = defineStore('message', {
       }
     },
 
-    /** Грузим и расшифровываем историю сообщений */
+    /** Грузим и обрабатываем историю сообщений */
     async loadMessages(recipientId: string) {
       if (!this.currentChatId || this.currentRecipientId !== recipientId) {
         await this.startDialog(recipientId)
@@ -81,11 +92,17 @@ export const useMessageStore = defineStore('message', {
       this.error     = null
       try {
         const msgs = await getMessages(this.currentChatId)
+        const auth = useAuthStore()
         this.messages = await Promise.all(
-          msgs.map(async msg => ({
-            ...msg,
-            decryptedContent: await decryptMessageContent(msg)
-          }))
+            msgs.map(async msg => {
+              let clear: string
+              if (msg.senderId === auth.userId) {
+                clear = msg.plainText ?? ''
+              } else {
+                clear = await decryptMessageContent(msg)
+              }
+              return { ...msg, decryptedContent: clear }
+            })
         )
       } catch (e: any) {
         this.error = e.message || 'Ошибка при загрузке сообщений'
@@ -106,7 +123,7 @@ export const useMessageStore = defineStore('message', {
       try {
         // 1) Шифруем текст
         const { encryptedContent, encryptedAesKey, iv } =
-          await encryptForRecipient(recipientId, plaintext)
+            await encryptForRecipient(recipientId, plaintext)
 
         // 2) Отправляем на бэк
         const msgDto = await sendMessage({
@@ -121,7 +138,8 @@ export const useMessageStore = defineStore('message', {
         // 3) Добавляем своё сообщение в UI сразу (plaintext)
         this.messages.push({
           ...msgDto,
-          decryptedContent: plaintext
+          decryptedContent: plaintext,
+          plainText:        plaintext,
         })
 
         // 4) Рассылаем по WebSocket для собеседника

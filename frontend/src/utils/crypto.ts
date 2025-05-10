@@ -182,22 +182,33 @@ export async function encryptForRecipient(
     recipientId: string,
     plaintext: string
 ): Promise<{ encryptedContent: string; encryptedAesKey: string; iv: string }> {
+  // 1) Генерируем AES-ключ и IV
   const aesKey = await generateAesKey()
-  const iv = generateIv()
+  const iv     = generateIv()
+
+  // 2) Шифруем тело сообщения AES-GCM
   const cipher = await encryptMessageWithAes(plaintext, aesKey, iv)
+
+  // 3) Получаем публичный ключ получателя
   const keyB64 = await getPublicKeyBase64(recipientId)
-  const rsaPub = await importRsaPublicKey(keyB64)
+  console.log('Используем public key для шифрования:', keyB64)
+
+  // 4) Импортируем RSA-ключ и шифруем AES-ключ
+  const rsaPub   = await importRsaPublicKey(keyB64)
   const encAesKey = await encryptAesKeyWithRsa(aesKey, rsaPub)
 
+  // 5) Возвращаем всё в Base64
   return {
     encryptedContent: bufferToBase64(cipher),
-    encryptedAesKey: bufferToBase64(encAesKey),
-    iv: bufferToBase64(iv)
+    encryptedAesKey:  bufferToBase64(encAesKey),
+    iv:               bufferToBase64(iv),
   }
 }
 
 /** Дешифровка входящего сообщения */
 export async function decryptMessageContent(msg: MessageDto): Promise<string> {
+  const auth = useAuthStore()
+  console.log('Используем private key:', auth.privateKey ?? 'не загружен, loadPrivateKey()')
   try {
     if (!msg.encryptedAesKey || !msg.encryptedContent || !msg.iv) {
       throw new Error('Поля сообщения отсутствуют')

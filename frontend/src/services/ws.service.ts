@@ -28,9 +28,10 @@ export class WsService {
     }
 
     onMessage(cb: (msg: MessageDto) => void) {
-        if (!this.connection) throw new Error("SignalR не подключён");
+        if (!this.connection) throw new Error("SignalR не подключён")
+
         this.connection.on("ReceiveMessage", payload => {
-            console.log("🔔 WS got:", payload);
+            console.log("🔔 WS got (ReceiveMessage):", payload);
             cb(payload as MessageDto);
         });
     }
