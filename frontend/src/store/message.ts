@@ -84,7 +84,13 @@ export const useMessageStore = defineStore('message', {
 
     /** Грузим и обрабатываем историю сообщений */
     async loadMessages(recipientId: string) {
-      if (!this.currentChatId || this.currentRecipientId !== recipientId) {
+      console.warn("87")
+      if (!this.currentChatId || this.currentRecipientId != recipientId) {
+
+        console.warn("curentchatid", this.currentChatId)
+        console.warn("currentRecipientId", this.currentRecipientId)
+        console.warn("recipientId", recipientId)
+        console.warn("89")
         await this.startDialog(recipientId)
         return
       }
@@ -92,10 +98,13 @@ export const useMessageStore = defineStore('message', {
       this.error     = null
       try {
         const msgs = await getMessages(this.currentChatId)
+        
         const auth = useAuthStore()
+        console.warn("99")
         this.messages = await Promise.all(
             msgs.map(async msg => {
               let clear: string
+              console.warn("message: ", msg)
               if (msg.senderId === auth.userId) {
                 clear = msg.plainText ?? ''
               } else {

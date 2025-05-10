@@ -63,6 +63,7 @@ function onSearch() {
 
 function selectUser(id: string) {
   // loadMessages установит currentRecipientId и загрузит историю
+  console.warn("test")
   messageStore.loadMessages(id)
 }
 
