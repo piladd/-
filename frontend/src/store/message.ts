@@ -62,18 +62,31 @@ export const useMessageStore = defineStore('message', {
         // если ещё не подключены — подключаемся
         await wsService.connect(auth.userId!, auth.token)
         // заходим в группу чата
-        await wsService.joinChat(this.currentChatId!)
+        // await wsService.joinChat(this.currentChatId!)
         // подписываемся на новые
+        // внутри startDialog, вместо текущего:
+        // ——— 3) WS: подписка на новые сообщения ———
+        await wsService.joinChat(this.currentChatId!)
         wsService.onMessage(async (msg: MessageDto) => {
-          if (msg.chatId === this.currentChatId) {
-            const clear = msg.senderId === auth.userId
-                ? msg.plainText ?? ''
-                : await decryptMessageContent(msg)
-            this.messages.push({
-              ...msg,
-              decryptedContent: clear,
-            })
+          // 1) не наш чат — игнорируем
+          if (msg.chatId !== this.currentChatId) return
+
+          // 2) уже есть такое сообщение — игнорируем
+          if (this.messages.some(m => m.id === msg.id)) {
+            console.log('skip duplicate msg', msg.id)
+            return
           }
+
+          // 3) иначе дешифруем и пушим
+          const auth  = useAuthStore()
+          const clear = msg.senderId === auth.userId
+            ? msg.plainText ?? ''
+            : await decryptMessageContent(msg)
+
+          this.messages.push({
+            ...msg,
+            decryptedContent: clear,
+          })
         })
       } catch (e: any) {
         this.error = e.message || 'Ошибка при старте диалога'
@@ -83,28 +96,26 @@ export const useMessageStore = defineStore('message', {
     },
 
     /** Грузим и обрабатываем историю сообщений */
-    async loadMessages(recipientId: string) {
-      console.warn("87")
-      if (!this.currentChatId || this.currentRecipientId != recipientId) {
-
-        console.warn("curentchatid", this.currentChatId)
-        console.warn("currentRecipientId", this.currentRecipientId)
-        console.warn("recipientId", recipientId)
-        console.warn("89")
+    async loadMessages(recipientId: string): Promise<void> {
+      console.warn("1")
+      if (!this.currentChatId || this.currentRecipientId !== recipientId) {
+        console.warn("2")
         await this.startDialog(recipientId)
-        return
+        return this.loadMessages(recipientId)
       }
       this.isLoading = true
       this.error     = null
       try {
         const msgs = await getMessages(this.currentChatId)
-        
         const auth = useAuthStore()
-        console.warn("99")
+        console.warn("3")
+        console.warn("curentchatid", this.currentChatId)
+        console.warn("currentRecipientId", this.currentRecipientId)
+        console.warn("recipientId", recipientId)
         this.messages = await Promise.all(
             msgs.map(async msg => {
               let clear: string
-              console.warn("message: ", msg)
+              // console.warn("message: ", msg)
               if (msg.senderId === auth.userId) {
                 clear = msg.plainText ?? ''
               } else {

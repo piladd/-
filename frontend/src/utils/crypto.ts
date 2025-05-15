@@ -206,48 +206,125 @@ export async function encryptForRecipient(
 }
 
 /** Дешифровка входящего сообщения */
+// export async function decryptMessageContent(msg: MessageDto): Promise<string> {
+//   const auth = useAuthStore()
+//   console.log('Используем private key:', auth.privateKey ?? 'не загружен, loadPrivateKey()')
+//   try {
+//     if (!msg.encryptedAesKey || !msg.encryptedContent || !msg.iv) {
+//       throw new Error('Поля сообщения отсутствуют')
+//     }
+
+//     const auth = useAuthStore()
+//     const privKey = auth.privateKey ?? await loadPrivateKey()
+
+//     // console.log('🔑 Encrypted AES key (B64):', msg.encryptedAesKey)
+//     // console.log('📜 Ciphertext (B64):', msg.encryptedContent)
+//     // console.log('🔬 IV (B64):', msg.iv)
+
+//     const aesRaw = await decryptAesKeyWithRsa(
+//         base64ToBuffer(msg.encryptedAesKey),
+//         privKey
+//     )
+//     // console.log('🔑 AES raw key bytes:', new Uint8Array(aesRaw))
+
+//     const aesKey = await crypto.subtle.importKey(
+//         'raw',
+//         aesRaw,
+//         { name: 'AES-GCM' },
+//         false,
+//         ['decrypt']
+//     )
+
+//     const ivBuf = new Uint8Array(base64ToBuffer(msg.iv))
+//     const cipherBuf = base64ToBuffer(msg.encryptedContent)
+//     // console.log('🔬 IV bytes:', ivBuf)
+//     // console.log('📜 Cipher bytes:', new Uint8Array(cipherBuf))
+
+//     const plainBuf = await decryptMessageWithAes(cipherBuf, aesKey, ivBuf)
+//     return new TextDecoder().decode(plainBuf)
+
+//   } catch (err: any) {
+//     console.error('Ошибка при расшифровке сообщения:', err)
+//     return '[Ошибка расшифровки]'
+//   }
+// }
+
+
 export async function decryptMessageContent(msg: MessageDto): Promise<string> {
-  const auth = useAuthStore()
-  console.log('Используем private key:', auth.privateKey ?? 'не загружен, loadPrivateKey()')
+  console.log('🔍 [decrypt] входящие данные:', msg);
+
   try {
+    // Проверка полей
     if (!msg.encryptedAesKey || !msg.encryptedContent || !msg.iv) {
-      throw new Error('Поля сообщения отсутствуют')
+      console.error('❌ [decrypt] отсутствуют поля:', {
+        encryptedAesKey: !!msg.encryptedAesKey,
+        encryptedContent: !!msg.encryptedContent,
+        iv: !!msg.iv,
+      });
+      throw new Error('Поля сообщения отсутствуют');
     }
 
-    const auth = useAuthStore()
-    const privKey = auth.privateKey ?? await loadPrivateKey()
+    // 1) приватный ключ
+    console.log('🔑 [decrypt] загружаем приватный ключ…');
+    const privKey = await loadPrivateKey();
+    console.log('✅ [decrypt] приватный ключ:', privKey);
 
-    console.log('🔑 Encrypted AES key (B64):', msg.encryptedAesKey)
-    console.log('📜 Ciphertext (B64):', msg.encryptedContent)
-    console.log('🔬 IV (B64):', msg.iv)
+    // 2) расшифровка AES-ключа
+    const aesKeyBuf = base64ToBuffer(msg.encryptedAesKey);
+    console.log('📦 [decrypt] AES-ключ (шифр, bytes):', new Uint8Array(aesKeyBuf));
+    let aesRaw: ArrayBuffer;
+    try {
+      console.log('🔓 [decrypt] decryptAesKeyWithRsa start');
+      aesRaw = await decryptAesKeyWithRsa(aesKeyBuf, privKey);
+      console.log('✅ [decrypt] AES-ключ (raw, bytes):', new Uint8Array(aesRaw));
+    } catch (err) {
+      console.error('❌ [decrypt] decryptAesKeyWithRsa failed:', err);
+      throw err;
+    }
 
-    const aesRaw = await decryptAesKeyWithRsa(
-        base64ToBuffer(msg.encryptedAesKey),
-        privKey
-    )
-    console.log('🔑 AES raw key bytes:', new Uint8Array(aesRaw))
-
-    const aesKey = await crypto.subtle.importKey(
+    // 3) импорт AES-ключа
+    let aesCryptoKey: CryptoKey;
+    try {
+      console.log('🔨 [decrypt] importKey(AES-GCM) start');
+      aesCryptoKey = await crypto.subtle.importKey(
         'raw',
         aesRaw,
         { name: 'AES-GCM' },
         false,
         ['decrypt']
-    )
+      );
+      console.log('✅ [decrypt] AES-ключ импортирован:', aesCryptoKey);
+    } catch (err) {
+      console.error('❌ [decrypt] importKey failed:', err);
+      throw err;
+    }
 
-    const ivBuf = new Uint8Array(base64ToBuffer(msg.iv))
-    const cipherBuf = base64ToBuffer(msg.encryptedContent)
-    console.log('🔬 IV bytes:', ivBuf)
-    console.log('📜 Cipher bytes:', new Uint8Array(cipherBuf))
+    // 4) подготовка IV и шифртекста
+    const ivBuf     = new Uint8Array(base64ToBuffer(msg.iv));
+    const cipherBuf = base64ToBuffer(msg.encryptedContent);
+    console.log('🧰 [decrypt] IV (bytes,len):', ivBuf, ivBuf.length);
+    console.log('🔐 [decrypt] Ciphertext (bytes,len):', new Uint8Array(cipherBuf), cipherBuf.byteLength);
 
-    const plainBuf = await decryptMessageWithAes(cipherBuf, aesKey, ivBuf)
-    return new TextDecoder().decode(plainBuf)
+    // 5) AES-дешифрование
+    try {
+      console.log('🚀 [decrypt] decryptMessageWithAes start');
+      const plainBuf = await decryptMessageWithAes(cipherBuf, aesCryptoKey, ivBuf);
+      const text = new TextDecoder().decode(plainBuf);
+      console.log('🎉 [decrypt] Дешифрованный текст:', text);
+      return text;
+    } catch (err) {
+      console.error('❌ [decrypt] decryptMessageWithAes failed:', err);
+      throw err;
+    }
 
   } catch (err: any) {
-    console.error('Ошибка при расшифровке сообщения:', err)
-    return '[Ошибка расшифровки]'
+    console.error('❗️ [decrypt] финальная ошибка:', err);
+    return '[Ошибка расшифровки]';
   }
 }
+
+
+
 
 /** Генерация пары RSA-OAEP и загрузка публичного ключа на сервер */
 export async function generateAndUploadKeyPair(): Promise<void> {
